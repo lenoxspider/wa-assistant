@@ -82,17 +82,17 @@
 - `[x]` 9.7 Dashboard search bar + KB editor
 
 ## Phase 10 – Advanced Features
-- `[ ]` 10.1 Rate-limiter & typing delay
-- `[ ]` 10.2 Message deduplication (unique key)
-- `[ ]` 10.3 Dead-letter queue + dashboard
-- `[ ]` 10.4 Users table, userId in all tables
-- `[ ]` 10.5 JWT auth & middleware
-- `[ ]` 10.6 Log sanitisation
-- `[ ]` 10.7 Backup cron + restore docs
-- `[ ]` 10.8 Group chat reply toggle
-- `[ ]` 10.9 Media vision pipeline
-- `[ ]` 10.10 Status handling toggle
-- `[ ]` 10.11 Web dashboard switches for all new features
+- `[x]` 10.1 Rate-limiter & typing delay
+- `[x]` 10.2 Message deduplication (unique key)
+- `[ ]` 10.3 Dead-letter queue + dashboard (Deferred)
+- `[ ]` 10.4 Users table, userId in all tables (Deferred)
+- `[ ]` 10.5 JWT auth & middleware (Deferred)
+- `[ ]` 10.6 Log sanitisation (Deferred)
+- `[x]` 10.7 Backup cron + restore docs
+- `[ ]` 10.8 Group chat reply toggle (Deferred)
+- `[ ]` 10.9 Media vision pipeline (Deferred)
+- `[x]` 10.10 Status handling toggle
+- `[ ]` 10.11 Web dashboard switches for all new features (Deferred)
 
 ## Phase 11 – Daily Briefs & LLM Query Dashboard
 - `[ ]` 11.1 Data-gathering cron (unread, tasks, escalations)

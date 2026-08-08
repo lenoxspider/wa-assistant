@@ -74,5 +74,13 @@ export async function initWhatsApp() {
 
 export async function sendMessage(jid: string, content: any) {
   if (!sock) throw new Error('Socket not initialized');
+  
+  if (content.text) {
+    await sock.sendPresenceUpdate('composing', jid);
+    const delay = Math.max(1000, Math.min(content.text.length * 30, 4000));
+    await new Promise(resolve => setTimeout(resolve, delay));
+    await sock.sendPresenceUpdate('paused', jid);
+  }
+  
   return sock.sendMessage(jid, content);
 }

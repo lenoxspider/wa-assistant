@@ -1,6 +1,8 @@
 import db from '../db/sqlite';
 
 export function checkRules(chatId: string): boolean {
+  if (chatId === 'status@broadcast') return false;
+  
   try {
     const rule = db.prepare('SELECT autoReplyEnabled, silenceDuration FROM rules WHERE chatId = ?').get(chatId) as { autoReplyEnabled: number, silenceDuration: number } | undefined;
     
