@@ -54,11 +54,11 @@
 - `[ ]` 5.6 Auto-release timer (optional)
 
 ## Phase 6 – Task Extraction & Integration
-- `[ ]` 6.1 Task extraction prompt
-- `[ ]` 6.2 Extraction module (run after reply)
-- `[ ]` 6.3 SQLite tasks table
-- `[ ]` 6.4 Dashboard tasks panel
-- `[ ]` 6.5 External sync (Todoist/Notion)
+- `[x]` 6.1 Task extraction prompt
+- `[x]` 6.2 Extraction module (run after reply)
+- `[x]` 6.3 SQLite tasks table
+- `[x]` 6.4 Dashboard tasks panel
+- `[ ]` 6.5 External sync (Todoist/Notion) (Optional/Future)
 
 ## Phase 7 – Voice Transcription Pipeline
 - `[ ]` 7.1 Media download helper (Baileys)

@@ -9,6 +9,7 @@ import { extractMemories } from './extraction';
 import { classifyIntent } from './classifier';
 import { checkRules } from './rules';
 import { handleEscalation } from './escalation';
+import { extractTasks } from './tasks';
 import db from '../db/sqlite';
 
 function fetchPersona(senderJid: string) {
@@ -42,6 +43,14 @@ export async function processMessagePipeline(msg: MessageEvent) {
   if (intent === 'extract_memory') {
     await extractMemories(msg.chatId, `User: ${msg.body}`, msg.senderJid || '');
     // We proceed to chat to acknowledge it anyway.
+  }
+
+  if (intent === 'execute_task') {
+    // Trigger task extraction
+    setTimeout(() => {
+      extractTasks(msg.chatId, `User: ${msg.body}`);
+    }, 100);
+    // Still proceed to chat to acknowledge it
   }
 
   // 1. Fetch history

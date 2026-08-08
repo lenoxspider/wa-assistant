@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
-import { Send, Settings, User, AlertCircle, CheckCircle } from 'lucide-react';
+import { Send, Settings, User, CheckCircle, ListTodo } from 'lucide-react';
 
 const API_URL = 'http://localhost:3001/api';
 const socket = io('http://localhost:3001');
@@ -9,7 +9,7 @@ const socket = io('http://localhost:3001');
 axios.defaults.headers.common['Authorization'] = 'Bearer secret-token';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'chats'|'escalations'>('chats');
+  const [activeTab, setActiveTab] = useState<'chats'|'escalations'|'tasks'>('chats');
   
   const [chats, setChats] = useState<any[]>([]);
   const [selectedChat, setSelectedChat] = useState<any>(null);
@@ -20,10 +20,12 @@ function App() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [escalations, setEscalations] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
 
   useEffect(() => {
     fetchChats();
     fetchEscalations();
+    fetchTasks();
     
     socket.on('new_message', (msg) => {
       fetchChats(); 
@@ -89,6 +91,15 @@ function App() {
     }
   }
 
+  const fetchTasks = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/tasks`);
+      setTasks(res.data);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim() || !selectedChat) return;
@@ -120,6 +131,15 @@ function App() {
     }
   };
 
+  const completeTask = async (id: number) => {
+    try {
+      await axios.post(`${API_URL}/tasks/${id}/complete`);
+      fetchTasks();
+    } catch(e) {
+      console.error(e);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-900 text-gray-100 font-sans">
       <div className="w-1/3 border-r border-gray-800 flex flex-col bg-gray-950">
@@ -133,6 +153,12 @@ function App() {
               className={`px-3 py-1 text-sm rounded ${activeTab === 'chats' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white'}`}
             >
               Chats
+            </button>
+            <button 
+              onClick={() => setActiveTab('tasks')}
+              className={`px-3 py-1 text-sm rounded flex items-center gap-1 ${activeTab === 'tasks' ? 'bg-blue-900 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+              <ListTodo size={14} /> Tasks
             </button>
             <button 
               onClick={() => setActiveTab('escalations')}
@@ -162,6 +188,34 @@ function App() {
                     <h3 className="font-medium text-gray-200">{c.name || c.jid.split('@')[0]}</h3>
                     <p className="text-xs text-gray-500 truncate">{c.isGroup ? 'Group' : 'Direct Message'}</p>
                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'tasks' && (
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {tasks.length === 0 ? (
+              <p className="text-gray-500 text-center mt-10">No tasks found</p>
+            ) : tasks.map((t: any) => (
+              <div key={t.id} className={`bg-gray-800 border-l-4 p-3 rounded shadow-md ${t.status === 'completed' ? 'border-l-green-500 opacity-50' : 'border-l-blue-500'}`}>
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-semibold text-blue-400 text-sm flex-1">{t.description}</h4>
+                  {t.dueBy && (
+                    <span className="text-[10px] text-gray-400 ml-2">Due: {new Date(t.dueBy).toLocaleDateString()}</span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-xs text-gray-500 flex-1 truncate">Source: {t.chatId.split('@')[0]}</span>
+                  {t.status !== 'completed' && (
+                    <button 
+                      onClick={() => completeTask(t.id)}
+                      className="bg-green-900/50 hover:bg-green-800/50 text-green-400 text-xs py-1 px-2 rounded transition-colors flex items-center gap-1"
+                    >
+                      <CheckCircle size={12} /> Done
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

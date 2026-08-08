@@ -97,6 +97,25 @@ app.post('/api/escalations/:id/resolve', (req, res) => {
   }
 });
 
+// Tasks
+app.get('/api/tasks', (req, res) => {
+  try {
+    const tasks = db.prepare('SELECT * FROM tasks ORDER BY id DESC').all();
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.post('/api/tasks/:id/complete', (req, res) => {
+  try {
+    db.prepare('UPDATE tasks SET status = ? WHERE id = ?').run('completed', req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 // WebSockets
 io.on('connection', (socket) => {
   console.log('Dashboard client connected');
