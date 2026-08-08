@@ -36,14 +36,14 @@
 - `[x]` 3.7 Per-chat persona storage & refresh
 
 ## Phase 4 – Dashboard MVP
-- `[ ]` 4.1 Express server skeleton
-- `[ ]` 4.2 REST API routes (chats, messages, rules)
-- `[ ]` 4.3 WebSocket relay
-- `[ ]` 4.4 React project scaffold
-- `[ ]` 4.5 Chat list & message view (with scroll)
-- `[ ]` 4.6 Manual reply capability
-- `[ ]` 4.7 Rule editor per chat
-- `[ ]` 4.8 Auth (simple token)
+- `[x]` 4.1 Express server skeleton
+- `[x]` 4.2 REST API routes (chats, messages, rules)
+- `[x]` 4.3 WebSocket relay
+- `[x]` 4.4 React project scaffold
+- `[x]` 4.5 Chat list & message view (with scroll)
+- `[x]` 4.6 Manual reply capability
+- `[x]` 4.7 Rule editor per chat
+- `[x]` 4.8 Auth (simple token)
 
 ## Phase 5 – Intervention & Escalation
 - `[ ]` 5.1 Escalation detection token

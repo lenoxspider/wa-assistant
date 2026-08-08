@@ -2,6 +2,7 @@ import { initWhatsApp } from './baileys/client';
 import { waEvents } from './baileys/events';
 import { enqueueIncoming } from './queue/producer';
 import { runMigrations } from './db/sqlite';
+import { startServer } from './api/server';
 
 async function bootstrap() {
   console.log('Running DB migrations...');
@@ -15,6 +16,9 @@ async function bootstrap() {
     enqueueIncoming(msgObj);
   });
   
+  // Start Dashboard server
+  startServer(3001);
+
   console.log('System is running!');
 }
 
