@@ -1,0 +1,30 @@
+{
+  "name": "whatsapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "better-sqlite3": "^13.0.3",
+    "bullmq": "^6.0.9",
+    "dotenv": "^17.4.2",
+    "ioredis": "^6.0.0",
+    "pino": "^10.3.1"
+  },
+  "allowScripts": {
+    "@whiskeysockets/baileys@7.0.0-rc14": true,
+    "protobufjs@7.6.5": true,
+    "msgpackr-extract@3.0.4": true,
+    "better-sqlite3@13.0.3": true
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^7.0.2"
+  }
+}

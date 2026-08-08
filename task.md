@@ -1,0 +1,113 @@
+# Project Task List
+
+## Phase 0 – Foundation
+- `[x]` 0.1 Set up Node.js project, install deps
+- `[/]` 0.2 Redis & Chroma (Docker) (Pending: Docker Desktop Install)
+- `[x]` 0.3 SQLite schema migration (base)
+- `[x]` 0.4 Baileys auth persistence
+- `[x]` 0.5 Baileys socket wrapper
+- `[x]` 0.6 Event emitter (internal bus)
+- `[x]` 0.7 BullMQ queue setup
+- `[x]` 0.8 Message router → job producer
+
+## Phase 1 – Core Chat Pipeline
+- `[ ]` 1.1 Worker skeleton
+- `[ ]` 1.2 Conversation context loader (SQLite)
+- `[ ]` 1.3 Ollama integration
+- `[ ]` 1.4 System prompt templates
+- `[ ]` 1.5 Chat pipeline (build prompt, send)
+- `[ ]` 1.6 Basic auto-reply test (1 contact)
+
+## Phase 2 – Memory Foundation
+- `[ ]` 2.1 ChromaDB client wrapper
+- `[ ]` 2.2 Ollama embedding function
+- `[ ]` 2.3 Memory retrieval (query on new msg)
+- `[ ]` 2.4 Memory extraction prompt + LLM call
+- `[ ]` 2.5 Store extracted facts in SQLite+Chroma
+- `[ ]` 2.6 Injection into chat prompt
+
+## Phase 3 – Multi-Model Chauffeur & Persona
+- `[ ]` 3.1 Intent classifier prompt + model
+- `[ ]` 3.2 Classifier module
+- `[ ]` 3.3 Routing logic (switch on intent)
+- `[ ]` 3.4 Specialist model prompts (business/casual)
+- `[ ]` 3.5 Persona extraction from history
+- `[ ]` 3.6 Inject persona into system prompt
+- `[ ]` 3.7 Per-chat persona storage & refresh
+
+## Phase 4 – Dashboard MVP
+- `[ ]` 4.1 Express server skeleton
+- `[ ]` 4.2 REST API routes (chats, messages, rules)
+- `[ ]` 4.3 WebSocket relay
+- `[ ]` 4.4 React project scaffold
+- `[ ]` 4.5 Chat list & message view (with scroll)
+- `[ ]` 4.6 Manual reply capability
+- `[ ]` 4.7 Rule editor per chat
+- `[ ]` 4.8 Auth (simple token)
+
+## Phase 5 – Intervention & Escalation
+- `[ ]` 5.1 Escalation detection token
+- `[ ]` 5.2 Deferral reply template
+- `[ ]` 5.3 Escalation recording & WS notification
+- `[ ]` 5.4 Dashboard escalation queue
+- `[ ]` 5.5 Resolution API + feedback loop
+- `[ ]` 5.6 Auto-release timer (optional)
+
+## Phase 6 – Task Extraction & Integration
+- `[ ]` 6.1 Task extraction prompt
+- `[ ]` 6.2 Extraction module (run after reply)
+- `[ ]` 6.3 SQLite tasks table
+- `[ ]` 6.4 Dashboard tasks panel
+- `[ ]` 6.5 External sync (Todoist/Notion)
+
+## Phase 7 – Voice Transcription Pipeline
+- `[ ]` 7.1 Media download helper (Baileys)
+- `[ ]` 7.2 Whisper.cpp / Ollama Whisper setup
+- `[ ]` 7.3 Voice job worker
+- `[ ]` 7.4 Store transcript, re-enqueue
+- `[ ]` 7.5 Dashboard media player
+
+## Phase 8 – Disappearing-Message Archiver
+- `[ ]` 8.1 Ephemeral flag capture (Baileys)
+- `[ ]` 8.2 Archiver cron job
+- `[ ]` 8.3 Dashboard indicator for expired msgs
+
+## Phase 9 – Knowledge Base & Web Search
+- `[ ]` 9.1 Knowledge-base seeding pipeline
+- `[ ]` 9.2 File upload endpoint + UI
+- `[ ]` 9.3 KB snippet injection into prompts
+- `[ ]` 9.4 Web search module
+- `[ ]` 9.5 DuckDuckGo client & caching
+- `[ ]` 9.6 Integration with classifier / LLM
+- `[ ]` 9.7 Dashboard search bar + KB editor
+
+## Phase 10 – Advanced Features
+- `[ ]` 10.1 Rate-limiter & typing delay
+- `[ ]` 10.2 Message deduplication (unique key)
+- `[ ]` 10.3 Dead-letter queue + dashboard
+- `[ ]` 10.4 Users table, userId in all tables
+- `[ ]` 10.5 JWT auth & middleware
+- `[ ]` 10.6 Log sanitisation
+- `[ ]` 10.7 Backup cron + restore docs
+- `[ ]` 10.8 Group chat reply toggle
+- `[ ]` 10.9 Media vision pipeline
+- `[ ]` 10.10 Status handling toggle
+- `[ ]` 10.11 Web dashboard switches for all new features
+
+## Phase 11 – Daily Briefs & LLM Query Dashboard
+- `[ ]` 11.1 Data-gathering cron (unread, tasks, escalations)
+- `[ ]` 11.2 Summarization prompt + LLM call
+- `[ ]` 11.3 Brief storage & dashboard view
+- `[ ]` 11.4 Optional self-delivery to your WhatsApp
+- `[ ]` 11.5 Dashboard LLM query endpoint
+- `[ ]` 11.6 Query UI (natural-language about archive)
+
+## Phase 12 – Hardening, Testing & Deployment
+- `[ ]` 12.1 Unit tests (prompts, DB helpers)
+- `[ ]` 12.2 Integration tests (queue → reply)
+- `[ ]` 12.3 E2E tests (dashboard actions)
+- `[ ]` 12.4 Security audit (auth, sanitisation)
+- `[ ]` 12.5 Performance tuning (message volume)
+- `[ ]` 12.6 Documentation (README, API docs)
+- `[ ]` 12.7 Containerisation (Docker Compose)
+- `[ ]` 12.8 Production checklist & deployment
