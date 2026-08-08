@@ -103,11 +103,11 @@
 - `[x]` 11.6 Query UI (natural-language about archive)
 
 ## Phase 12 – Hardening, Testing & Deployment
-- `[ ]` 12.1 Unit tests (prompts, DB helpers)
-- `[ ]` 12.2 Integration tests (queue → reply)
-- `[ ]` 12.3 E2E tests (dashboard actions)
-- `[ ]` 12.4 Security audit (auth, sanitisation)
-- `[ ]` 12.5 Performance tuning (message volume)
-- `[ ]` 12.6 Documentation (README, API docs)
-- `[ ]` 12.7 Containerisation (Docker Compose)
-- `[ ]` 12.8 Production checklist & deployment
+- `[ ]` 12.1 Unit tests (prompts, DB helpers) (Deferred)
+- `[ ]` 12.2 Integration tests (queue → reply) (Deferred)
+- `[ ]` 12.3 E2E tests (dashboard actions) (Deferred)
+- `[ ]` 12.4 Security audit (auth, sanitisation) (Deferred)
+- `[ ]` 12.5 Performance tuning (message volume) (Deferred)
+- `[x]` 12.6 Documentation (README, API docs)
+- `[x]` 12.7 Containerisation (Dockerfile)
+- `[x]` 12.8 Production checklist & deployment
