@@ -4,6 +4,8 @@ import { MessageEvent } from '../baileys/events';
 import { fetchChatHistory } from '../db/sqlite';
 import { generateChatReply } from './llmClient';
 import { sendMessage } from '../baileys/client';
+import { queryMemory } from '../db/chroma';
+import { extractMemories } from './extraction';
 
 export async function processMessagePipeline(msg: MessageEvent) {
   if (msg.fromMe) return; // don't reply to ourselves
@@ -12,14 +14,19 @@ export async function processMessagePipeline(msg: MessageEvent) {
   const history = fetchChatHistory(msg.chatId, 10);
   const historyText = history.map((m: any) => `${m.fromMe ? 'Me' : 'User'}: ${m.body}`).join('\n');
 
-  // 2. Load prompt template
+  // 2. Fetch relevant memories
+  const memoryResults = await queryMemory(msg.body || '', 3);
+  const memoryFacts = memoryResults?.documents?.[0]?.length 
+    ? memoryResults.documents[0].join('\n') 
+    : "No relevant facts found.";
+
+  // 3. Load prompt template
   const templatePath = path.resolve(process.cwd(), 'config', 'prompts', 'main_persona.txt');
   let promptTemplate = fs.readFileSync(templatePath, 'utf8');
 
-  // 3. Replace placeholders (mocking memory and persona for now until Phase 2 & 3)
+  // 4. Replace placeholders (mocking persona until Phase 3)
   const personaTraits = "Friendly, concise, and helpful.";
   const knowledgeSnippets = "No relevant knowledge found.";
-  const memoryFacts = "No relevant facts found.";
 
   const systemPrompt = promptTemplate
     .replace('{persona_traits}', personaTraits)
@@ -46,6 +53,12 @@ User message: ${msg.body}
 
     console.log('Sending reply:', reply);
     await sendMessage(msg.chatId, { text: reply });
+
+    // 5. Trigger background memory extraction after sending reply
+    setTimeout(() => {
+      extractMemories(msg.chatId, historyText + `\nMe: ${reply}`, msg.senderJid || '');
+    }, 100);
+
   } catch (err) {
     console.error('Error in chat pipeline:', err);
   }

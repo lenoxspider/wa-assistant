@@ -19,12 +19,12 @@
 - `[ ]` 1.6 Basic auto-reply test (1 contact)
 
 ## Phase 2 – Memory Foundation
-- `[ ]` 2.1 ChromaDB client wrapper
-- `[ ]` 2.2 Ollama embedding function
-- `[ ]` 2.3 Memory retrieval (query on new msg)
-- `[ ]` 2.4 Memory extraction prompt + LLM call
-- `[ ]` 2.5 Store extracted facts in SQLite+Chroma
-- `[ ]` 2.6 Injection into chat prompt
+- `[x]` 2.1 ChromaDB client wrapper
+- `[x]` 2.2 Ollama embedding function
+- `[x]` 2.3 Memory retrieval (query on new msg)
+- `[x]` 2.4 Memory extraction prompt + LLM call
+- `[x]` 2.5 Store extracted facts in SQLite+Chroma
+- `[x]` 2.6 Injection into chat prompt
 
 ## Phase 3 – Multi-Model Chauffeur & Persona
 - `[ ]` 3.1 Intent classifier prompt + model
