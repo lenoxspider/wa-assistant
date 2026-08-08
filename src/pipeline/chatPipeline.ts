@@ -10,6 +10,8 @@ import { classifyIntent } from './classifier';
 import { checkRules } from './rules';
 import { handleEscalation } from './escalation';
 import { extractTasks } from './tasks';
+import { queryKnowledge } from './knowledge';
+import { performWebSearch } from './search';
 import db from '../db/sqlite';
 
 function fetchPersona(senderJid: string) {
@@ -57,11 +59,27 @@ export async function processMessagePipeline(msg: MessageEvent) {
   const history = fetchChatHistory(msg.chatId, 10);
   const historyText = history.map((m: any) => `${m.fromMe ? 'Me' : 'User'}: ${m.body}`).join('\n');
 
+  // 1.5 Handle search_web intent
+  let webContext = '';
+  if (intent === 'search_web') {
+    webContext = await performWebSearch(msg.body || '');
+  }
+
   // 2. Fetch relevant memories
   const memoryResults = await queryMemory(msg.body || '', 3);
   const memoryFacts = memoryResults?.documents?.[0]?.length 
     ? memoryResults.documents[0].join('\n') 
     : "No relevant facts found.";
+
+  // 2.5 Fetch relevant knowledge base snippets
+  const kbResults = await queryKnowledge(msg.body || '', 2);
+  const knowledgeSnippets = kbResults?.documents?.[0]?.length 
+    ? kbResults.documents[0].join('\n') 
+    : "No relevant knowledge found.";
+    
+  const finalKnowledge = webContext 
+    ? `Web Search Results:\n${webContext}\n\nInternal KB:\n${knowledgeSnippets}` 
+    : knowledgeSnippets;
 
   // 3. Load prompt template
   const templatePath = path.resolve(process.cwd(), 'config', 'prompts', 'main_persona.txt');
@@ -69,11 +87,10 @@ export async function processMessagePipeline(msg: MessageEvent) {
 
   // 4. Replace placeholders 
   const personaTraits = fetchPersona(msg.senderJid || '');
-  const knowledgeSnippets = "No relevant knowledge found.";
 
   const systemPrompt = promptTemplate
     .replace('{persona_traits}', personaTraits)
-    .replace('{knowledge_snippets}', knowledgeSnippets)
+    .replace('{knowledge_snippets}', finalKnowledge)
     .replace('{memory_facts}', memoryFacts);
 
   const fullPrompt = `${systemPrompt}

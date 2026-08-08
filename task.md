@@ -73,13 +73,13 @@
 - `[x]` 8.3 Dashboard indicator for expired msgs
 
 ## Phase 9 – Knowledge Base & Web Search
-- `[ ]` 9.1 Knowledge-base seeding pipeline
-- `[ ]` 9.2 File upload endpoint + UI
-- `[ ]` 9.3 KB snippet injection into prompts
-- `[ ]` 9.4 Web search module
-- `[ ]` 9.5 DuckDuckGo client & caching
-- `[ ]` 9.6 Integration with classifier / LLM
-- `[ ]` 9.7 Dashboard search bar + KB editor
+- `[x]` 9.1 Knowledge-base seeding pipeline
+- `[x]` 9.2 File upload endpoint + UI
+- `[x]` 9.3 KB snippet injection into prompts
+- `[x]` 9.4 Web search module
+- `[x]` 9.5 DuckDuckGo client & caching
+- `[x]` 9.6 Integration with classifier / LLM
+- `[x]` 9.7 Dashboard search bar + KB editor
 
 ## Phase 10 – Advanced Features
 - `[ ]` 10.1 Rate-limiter & typing delay

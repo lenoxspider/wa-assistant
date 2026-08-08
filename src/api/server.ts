@@ -116,6 +116,27 @@ app.post('/api/tasks/:id/complete', (req, res) => {
   }
 });
 
+// Knowledge Base
+app.get('/api/knowledge', (req, res) => {
+  try {
+    const kb = db.prepare('SELECT id, category, content FROM knowledgebase ORDER BY id DESC').all();
+    res.json(kb);
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.post('/api/knowledge', async (req, res) => {
+  try {
+    const { content, category } = req.body;
+    const { addKnowledge } = await import('../pipeline/knowledge');
+    await addKnowledge(content, category || 'general');
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add knowledge' });
+  }
+});
+
 // WebSockets
 io.on('connection', (socket) => {
   console.log('Dashboard client connected');
