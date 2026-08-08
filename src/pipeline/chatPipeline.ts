@@ -6,9 +6,42 @@ import { generateChatReply } from './llmClient';
 import { sendMessage } from '../baileys/client';
 import { queryMemory } from '../db/chroma';
 import { extractMemories } from './extraction';
+import { classifyIntent } from './classifier';
+import { checkRules } from './rules';
+import db from '../db/sqlite';
+
+function fetchPersona(senderJid: string) {
+  try {
+    const row = db.prepare('SELECT traitsJson FROM personas WHERE senderJid = ?').get(senderJid) as any;
+    if (row && row.traitsJson) {
+      const traits = JSON.parse(row.traitsJson);
+      return traits.join(', ');
+    }
+  } catch(e) {}
+  return "Friendly, concise, and helpful."; // default
+}
 
 export async function processMessagePipeline(msg: MessageEvent) {
   if (msg.fromMe) return; // don't reply to ourselves
+
+  // 0. Rules check
+  if (!checkRules(msg.chatId)) {
+    console.log(`Auto-reply disabled for ${msg.chatId}`);
+    return;
+  }
+
+  // 0.5 Intent classification
+  const intent = await classifyIntent(msg.body || '');
+  console.log(`Classified intent: ${intent}`);
+  
+  if (intent === 'ignore') {
+    return;
+  }
+
+  if (intent === 'extract_memory') {
+    await extractMemories(msg.chatId, `User: ${msg.body}`, msg.senderJid || '');
+    // We proceed to chat to acknowledge it anyway.
+  }
 
   // 1. Fetch history
   const history = fetchChatHistory(msg.chatId, 10);
@@ -24,8 +57,8 @@ export async function processMessagePipeline(msg: MessageEvent) {
   const templatePath = path.resolve(process.cwd(), 'config', 'prompts', 'main_persona.txt');
   let promptTemplate = fs.readFileSync(templatePath, 'utf8');
 
-  // 4. Replace placeholders (mocking persona until Phase 3)
-  const personaTraits = "Friendly, concise, and helpful.";
+  // 4. Replace placeholders 
+  const personaTraits = fetchPersona(msg.senderJid || '');
   const knowledgeSnippets = "No relevant knowledge found.";
 
   const systemPrompt = promptTemplate

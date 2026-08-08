@@ -27,13 +27,13 @@
 - `[x]` 2.6 Injection into chat prompt
 
 ## Phase 3 – Multi-Model Chauffeur & Persona
-- `[ ]` 3.1 Intent classifier prompt + model
-- `[ ]` 3.2 Classifier module
-- `[ ]` 3.3 Routing logic (switch on intent)
-- `[ ]` 3.4 Specialist model prompts (business/casual)
-- `[ ]` 3.5 Persona extraction from history
-- `[ ]` 3.6 Inject persona into system prompt
-- `[ ]` 3.7 Per-chat persona storage & refresh
+- `[x]` 3.1 Intent classifier prompt + model
+- `[x]` 3.2 Classifier module
+- `[x]` 3.3 Routing logic (switch on intent)
+- `[x]` 3.4 Specialist model prompts (business/casual)
+- `[x]` 3.5 Persona extraction from history
+- `[x]` 3.6 Inject persona into system prompt
+- `[x]` 3.7 Per-chat persona storage & refresh
 
 ## Phase 4 – Dashboard MVP
 - `[ ]` 4.1 Express server skeleton
