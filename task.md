@@ -11,11 +11,11 @@
 - `[x]` 0.8 Message router → job producer
 
 ## Phase 1 – Core Chat Pipeline
-- `[ ]` 1.1 Worker skeleton
-- `[ ]` 1.2 Conversation context loader (SQLite)
-- `[ ]` 1.3 Ollama integration
-- `[ ]` 1.4 System prompt templates
-- `[ ]` 1.5 Chat pipeline (build prompt, send)
+- `[x]` 1.1 Worker skeleton
+- `[x]` 1.2 Conversation context loader (SQLite)
+- `[x]` 1.3 Ollama integration
+- `[x]` 1.4 System prompt templates
+- `[x]` 1.5 Chat pipeline (build prompt, send)
 - `[ ]` 1.6 Basic auto-reply test (1 contact)
 
 ## Phase 2 – Memory Foundation

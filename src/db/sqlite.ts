@@ -36,7 +36,15 @@ export function runMigrations() {
       db.exec(sql);
       db.prepare('INSERT INTO _migrations (filename) VALUES (?)').run(file);
     }
-  }
+}
+
+export function fetchChatHistory(chatId: string, limit: number = 30) {
+  return db.prepare(`
+    SELECT * FROM messages 
+    WHERE chatId = ? 
+    ORDER BY timestamp DESC 
+    LIMIT ?
+  `).all(chatId, limit).reverse();
 }
 
 export default db;

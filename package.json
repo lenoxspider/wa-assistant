@@ -10,6 +10,7 @@
   "type": "commonjs",
   "dependencies": {
     "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "axios": "^1.19.0",
     "better-sqlite3": "^13.0.3",
     "bullmq": "^6.0.9",
     "dotenv": "^17.4.2",
