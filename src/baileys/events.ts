@@ -13,6 +13,7 @@ export interface MessageEvent {
   isEphemeral: boolean;
   ephemeralExpiry?: number | null;
   rawEvent?: any;
+  rawMessage?: any;
 }
 
 class WhatsAppEventEmitter extends EventEmitter {}

@@ -61,11 +61,11 @@
 - `[ ]` 6.5 External sync (Todoist/Notion) (Optional/Future)
 
 ## Phase 7 – Voice Transcription Pipeline
-- `[ ]` 7.1 Media download helper (Baileys)
-- `[ ]` 7.2 Whisper.cpp / Ollama Whisper setup
-- `[ ]` 7.3 Voice job worker
-- `[ ]` 7.4 Store transcript, re-enqueue
-- `[ ]` 7.5 Dashboard media player
+- `[x]` 7.1 Media download helper (Baileys)
+- `[x]` 7.2 Whisper.cpp / Ollama Whisper setup (Mocked)
+- `[x]` 7.3 Voice job worker
+- `[x]` 7.4 Store transcript, re-enqueue
+- `[x]` 7.5 Dashboard media player (via transcript text)
 
 ## Phase 8 – Disappearing-Message Archiver
 - `[ ]` 8.1 Ephemeral flag capture (Baileys)
