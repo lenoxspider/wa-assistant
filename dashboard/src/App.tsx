@@ -300,7 +300,9 @@ function App() {
                     ? 'bg-gradient-to-br from-green-600 to-emerald-700 text-white rounded-br-none' 
                     : 'bg-gray-800 text-gray-100 border border-gray-700 rounded-bl-none'
                   }`}>
-                    <p className="text-sm whitespace-pre-wrap">{m.body}</p>
+                    <p className={`text-sm whitespace-pre-wrap ${m.deleted ? 'italic opacity-70' : ''}`}>
+                      {m.deleted === 1 ? '🕒 [Message Expired]' : m.body}
+                    </p>
                     <span className="text-[10px] opacity-60 mt-1 block text-right">
                       {new Date(m.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>

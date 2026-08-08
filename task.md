@@ -68,9 +68,9 @@
 - `[x]` 7.5 Dashboard media player (via transcript text)
 
 ## Phase 8 – Disappearing-Message Archiver
-- `[ ]` 8.1 Ephemeral flag capture (Baileys)
-- `[ ]` 8.2 Archiver cron job
-- `[ ]` 8.3 Dashboard indicator for expired msgs
+- `[x]` 8.1 Ephemeral flag capture (Baileys)
+- `[x]` 8.2 Archiver cron job
+- `[x]` 8.3 Dashboard indicator for expired msgs
 
 ## Phase 9 – Knowledge Base & Web Search
 - `[ ]` 9.1 Knowledge-base seeding pipeline

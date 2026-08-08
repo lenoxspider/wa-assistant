@@ -3,6 +3,7 @@ import { waEvents } from './baileys/events';
 import { enqueueIncoming } from './queue/producer';
 import { runMigrations } from './db/sqlite';
 import { startServer } from './api/server';
+import { startArchiverCron } from './cron/archiver';
 
 async function bootstrap() {
   console.log('Running DB migrations...');
@@ -18,6 +19,9 @@ async function bootstrap() {
   
   // Start Dashboard server
   startServer(3001);
+
+  // Start Background Jobs
+  startArchiverCron();
 
   console.log('System is running!');
 }
