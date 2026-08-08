@@ -15,7 +15,6 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 
-// 4.8 Auth middleware (simple token)
 const AUTH_TOKEN = process.env.API_TOKEN || 'secret-token';
 app.use((req, res, next) => {
   const token = req.headers.authorization;
@@ -25,7 +24,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// 4.2 REST API routes
+// Chats
 app.get('/api/chats', (req, res) => {
   try {
     const chats = db.prepare('SELECT * FROM chats ORDER BY lastActivity DESC').all();
@@ -35,6 +34,7 @@ app.get('/api/chats', (req, res) => {
   }
 });
 
+// Messages
 app.get('/api/chats/:id/messages', (req, res) => {
   try {
     const messages = db.prepare('SELECT * FROM messages WHERE chatId = ? ORDER BY timestamp ASC LIMIT 50').all(req.params.id);
@@ -44,6 +44,7 @@ app.get('/api/chats/:id/messages', (req, res) => {
   }
 });
 
+// Reply
 app.post('/api/chats/:id/reply', async (req, res) => {
   try {
     const { text } = req.body;
@@ -54,6 +55,7 @@ app.post('/api/chats/:id/reply', async (req, res) => {
   }
 });
 
+// Rules
 app.get('/api/rules/:id', (req, res) => {
   try {
     const rule = db.prepare('SELECT * FROM rules WHERE chatId = ?').get(req.params.id);
@@ -74,7 +76,28 @@ app.post('/api/rules/:id', (req, res) => {
   }
 });
 
-// 4.3 WebSocket relay
+// Escalations
+app.get('/api/escalations', (req, res) => {
+  try {
+    const escalations = db.prepare('SELECT * FROM escalations WHERE resolvedBy IS NULL ORDER BY timestamp DESC').all();
+    res.json(escalations);
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.post('/api/escalations/:id/resolve', (req, res) => {
+  try {
+    const { resolution } = req.body;
+    db.prepare('UPDATE escalations SET resolvedBy = ?, resolution = ? WHERE id = ?')
+      .run('admin', resolution || 'Resolved via dashboard', req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// WebSockets
 io.on('connection', (socket) => {
   console.log('Dashboard client connected');
 });
@@ -82,6 +105,10 @@ io.on('connection', (socket) => {
 waEvents.on('whatsapp:incoming', (msg) => {
   io.emit('new_message', msg);
 });
+
+export function emitEscalation(data: any) {
+  io.emit('new_escalation', data);
+}
 
 export function startServer(port = 3001) {
   httpServer.listen(port, () => {

@@ -8,6 +8,7 @@ import { queryMemory } from '../db/chroma';
 import { extractMemories } from './extraction';
 import { classifyIntent } from './classifier';
 import { checkRules } from './rules';
+import { handleEscalation } from './escalation';
 import db from '../db/sqlite';
 
 function fetchPersona(senderJid: string) {
@@ -81,6 +82,10 @@ User message: ${msg.body}
     
     if (reply.startsWith('!ESCALATE') || reply.startsWith('!NO_REPLY')) {
       console.log('LLM requested escalation or no reply:', reply);
+      if (reply.startsWith('!ESCALATE')) {
+        const reason = reply.replace('!ESCALATE', '').trim();
+        await handleEscalation(msg.chatId, msg.messageId, reason);
+      }
       return;
     }
 

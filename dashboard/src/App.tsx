@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
-import { Send, Settings, User } from 'lucide-react';
+import { Send, Settings, User, AlertCircle, CheckCircle } from 'lucide-react';
 
 const API_URL = 'http://localhost:3001/api';
 const socket = io('http://localhost:3001');
@@ -9,7 +9,9 @@ const socket = io('http://localhost:3001');
 axios.defaults.headers.common['Authorization'] = 'Bearer secret-token';
 
 function App() {
-  const [chats, setChats] = useState([]);
+  const [activeTab, setActiveTab] = useState<'chats'|'escalations'>('chats');
+  
+  const [chats, setChats] = useState<any[]>([]);
   const [selectedChat, setSelectedChat] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [replyText, setReplyText] = useState('');
@@ -17,8 +19,11 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const [escalations, setEscalations] = useState<any[]>([]);
+
   useEffect(() => {
     fetchChats();
+    fetchEscalations();
     
     socket.on('new_message', (msg) => {
       fetchChats(); 
@@ -27,8 +32,13 @@ function App() {
       }
     });
 
+    socket.on('new_escalation', (esc) => {
+      setEscalations(prev => [esc, ...prev]);
+    });
+
     return () => {
       socket.off('new_message');
+      socket.off('new_escalation');
     };
   }, [selectedChat]);
 
@@ -70,6 +80,15 @@ function App() {
     }
   };
 
+  const fetchEscalations = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/escalations`);
+      setEscalations(res.data);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim() || !selectedChat) return;
@@ -92,33 +111,97 @@ function App() {
     }
   };
 
+  const resolveEscalation = async (id: number) => {
+    try {
+      await axios.post(`${API_URL}/escalations/${id}/resolve`, { resolution: 'Resolved via dashboard' });
+      setEscalations(prev => prev.filter(e => e.id !== id));
+    } catch(e) {
+      console.error(e);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-900 text-gray-100 font-sans">
       <div className="w-1/3 border-r border-gray-800 flex flex-col bg-gray-950">
-        <div className="p-4 border-b border-gray-800">
+        <div className="p-4 border-b border-gray-800 flex justify-between items-center">
           <h1 className="text-xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
             WA Assistant
           </h1>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {chats.map((c: any) => (
-            <div 
-              key={c.jid} 
-              onClick={() => setSelectedChat(c)}
-              className={`p-4 border-b border-gray-800 cursor-pointer transition-colors ${selectedChat?.jid === c.jid ? 'bg-gray-800 border-l-4 border-l-green-500' : 'hover:bg-gray-800/50'}`}
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setActiveTab('chats')}
+              className={`px-3 py-1 text-sm rounded ${activeTab === 'chats' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white'}`}
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-500">
-                  <User size={20} />
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-200">{c.name || c.jid.split('@')[0]}</h3>
-                  <p className="text-xs text-gray-500 truncate">{c.isGroup ? 'Group' : 'Direct Message'}</p>
+              Chats
+            </button>
+            <button 
+              onClick={() => setActiveTab('escalations')}
+              className={`px-3 py-1 text-sm rounded flex items-center gap-1 ${activeTab === 'escalations' ? 'bg-red-900 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+              Alerts
+              {escalations.length > 0 && (
+                <span className="bg-red-500 text-white text-[10px] px-1.5 rounded-full">{escalations.length}</span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {activeTab === 'chats' && (
+          <div className="flex-1 overflow-y-auto">
+            {chats.map((c: any) => (
+              <div 
+                key={c.jid} 
+                onClick={() => setSelectedChat(c)}
+                className={`p-4 border-b border-gray-800 cursor-pointer transition-colors ${selectedChat?.jid === c.jid ? 'bg-gray-800 border-l-4 border-l-green-500' : 'hover:bg-gray-800/50'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-500">
+                    <User size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-gray-200">{c.name || c.jid.split('@')[0]}</h3>
+                    <p className="text-xs text-gray-500 truncate">{c.isGroup ? 'Group' : 'Direct Message'}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'escalations' && (
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {escalations.length === 0 ? (
+              <p className="text-gray-500 text-center mt-10">No active escalations</p>
+            ) : escalations.map((esc: any, idx: number) => (
+              <div key={idx} className="bg-gray-800 border-l-4 border-l-red-500 p-3 rounded shadow-md">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-semibold text-red-400 text-sm">{esc.chatId.split('@')[0]}</h4>
+                  <span className="text-[10px] text-gray-500">
+                    {new Date(esc.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-300 mb-3">{esc.reason}</p>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => {
+                      setSelectedChat({ jid: esc.chatId, name: esc.chatId });
+                      setActiveTab('chats');
+                    }}
+                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-xs py-1.5 rounded transition-colors"
+                  >
+                    View Chat
+                  </button>
+                  <button 
+                    onClick={() => resolveEscalation(esc.id)}
+                    className="flex-1 bg-green-900/50 hover:bg-green-800/50 text-green-400 text-xs py-1.5 rounded transition-colors flex items-center justify-center gap-1"
+                  >
+                    <CheckCircle size={14} /> Resolve
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 flex flex-col relative">

@@ -46,11 +46,11 @@
 - `[x]` 4.8 Auth (simple token)
 
 ## Phase 5 – Intervention & Escalation
-- `[ ]` 5.1 Escalation detection token
-- `[ ]` 5.2 Deferral reply template
-- `[ ]` 5.3 Escalation recording & WS notification
-- `[ ]` 5.4 Dashboard escalation queue
-- `[ ]` 5.5 Resolution API + feedback loop
+- `[x]` 5.1 Escalation detection token
+- `[x]` 5.2 Deferral reply template
+- `[x]` 5.3 Escalation recording & WS notification
+- `[x]` 5.4 Dashboard escalation queue
+- `[x]` 5.5 Resolution API + feedback loop
 - `[ ]` 5.6 Auto-release timer (optional)
 
 ## Phase 6 – Task Extraction & Integration
