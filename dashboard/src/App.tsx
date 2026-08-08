@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
-import { Send, Settings, User, CheckCircle, ListTodo, BookOpen, Plus } from 'lucide-react';
+import { Send, Settings, User, CheckCircle, ListTodo, BookOpen, Plus, Lightbulb } from 'lucide-react';
 
 const API_URL = 'http://localhost:3001/api';
 const socket = io('http://localhost:3001');
@@ -9,7 +9,7 @@ const socket = io('http://localhost:3001');
 axios.defaults.headers.common['Authorization'] = 'Bearer secret-token';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'chats'|'escalations'|'tasks'|'kb'>('chats');
+  const [activeTab, setActiveTab] = useState<'chats'|'escalations'|'tasks'|'kb'|'insights'>('chats');
   
   const [chats, setChats] = useState<any[]>([]);
   const [selectedChat, setSelectedChat] = useState<any>(null);
@@ -22,15 +22,19 @@ function App() {
   const [escalations, setEscalations] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const [knowledge, setKnowledge] = useState<any[]>([]);
+  const [briefs, setBriefs] = useState<any[]>([]);
   
   const [newKbContent, setNewKbContent] = useState('');
   const [newKbCategory, setNewKbCategory] = useState('');
+  const [aiQuery, setAiQuery] = useState('');
+  const [aiAnswer, setAiAnswer] = useState('');
 
   useEffect(() => {
     fetchChats();
     fetchEscalations();
     fetchTasks();
     fetchKnowledge();
+    fetchBriefs();
     
     socket.on('new_message', (msg) => {
       fetchChats(); 
@@ -111,6 +115,28 @@ function App() {
       setKnowledge(res.data);
     } catch (e) {
       console.error(e);
+    }
+  }
+
+  const fetchBriefs = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/briefs`);
+      setBriefs(res.data);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  const handleQuery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiQuery.trim()) return;
+    try {
+      setAiAnswer('Thinking...');
+      const res = await axios.post(`${API_URL}/query`, { query: aiQuery });
+      setAiAnswer(res.data.answer);
+    } catch(e) {
+      console.error(e);
+      setAiAnswer('Error asking AI.');
     }
   }
 
@@ -201,6 +227,12 @@ function App() {
               {escalations.length > 0 && (
                 <span className="bg-red-500 text-white text-[10px] px-1.5 rounded-full ml-1">{escalations.length}</span>
               )}
+            </button>
+            <button 
+              onClick={() => setActiveTab('insights')}
+              className={`px-3 py-1.5 text-xs rounded-md flex items-center gap-1.5 ${activeTab === 'insights' ? 'bg-orange-900/40 text-orange-400 shadow ring-1 ring-orange-500/20' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'}`}
+            >
+              <Lightbulb size={12} /> Insights
             </button>
           </div>
         </div>
@@ -323,6 +355,41 @@ function App() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {activeTab === 'insights' && (
+          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
+            <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
+              <h3 className="text-orange-400 font-semibold text-sm mb-3">Ask AI (Archive Query)</h3>
+              <form onSubmit={handleQuery} className="flex gap-2 mb-3">
+                <input 
+                  type="text" 
+                  value={aiQuery}
+                  onChange={e => setAiQuery(e.target.value)}
+                  placeholder="e.g. What did John say about the project?" 
+                  className="flex-1 bg-gray-950 border border-gray-700 p-2 text-sm rounded focus:border-orange-500 focus:outline-none"
+                />
+                <button type="submit" className="bg-orange-600 hover:bg-orange-500 text-white px-3 py-2 rounded transition-colors">
+                  Ask
+                </button>
+              </form>
+              {aiAnswer && (
+                <div className="bg-gray-800 p-3 rounded text-sm text-gray-200 border border-gray-700 whitespace-pre-wrap">
+                  {aiAnswer}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Recent Briefs</h3>
+              {briefs.map((b: any) => (
+                <div key={b.id} className="bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-700">
+                  <span className="text-xs text-orange-300 font-medium mb-2 block">{b.date}</span>
+                  <div className="text-sm text-gray-300 whitespace-pre-wrap">{b.contentJson}</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

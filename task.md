@@ -95,12 +95,12 @@
 - `[ ]` 10.11 Web dashboard switches for all new features (Deferred)
 
 ## Phase 11 – Daily Briefs & LLM Query Dashboard
-- `[ ]` 11.1 Data-gathering cron (unread, tasks, escalations)
-- `[ ]` 11.2 Summarization prompt + LLM call
-- `[ ]` 11.3 Brief storage & dashboard view
-- `[ ]` 11.4 Optional self-delivery to your WhatsApp
-- `[ ]` 11.5 Dashboard LLM query endpoint
-- `[ ]` 11.6 Query UI (natural-language about archive)
+- `[x]` 11.1 Data-gathering cron (unread, tasks, escalations)
+- `[x]` 11.2 Summarization prompt + LLM call
+- `[x]` 11.3 Brief storage & dashboard view
+- `[x]` 11.4 Optional self-delivery to your WhatsApp
+- `[x]` 11.5 Dashboard LLM query endpoint
+- `[x]` 11.6 Query UI (natural-language about archive)
 
 ## Phase 12 – Hardening, Testing & Deployment
 - `[ ]` 12.1 Unit tests (prompts, DB helpers)

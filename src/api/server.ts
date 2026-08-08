@@ -137,6 +137,40 @@ app.post('/api/knowledge', async (req, res) => {
   }
 });
 
+// Briefs & Insights
+app.get('/api/briefs', (req, res) => {
+  try {
+    const briefs = db.prepare('SELECT * FROM briefs ORDER BY id DESC LIMIT 5').all();
+    res.json(briefs);
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.post('/api/query', async (req, res) => {
+  try {
+    const { query } = req.body;
+    const { queryMemory } = await import('../db/chroma');
+    const { generateChatReply } = await import('../pipeline/llmClient');
+    
+    const memoryResults = await queryMemory(query, 5);
+    const facts = memoryResults?.documents?.[0]?.join('\n') || '';
+    
+    const prompt = `You are a helpful assistant querying the user's personal WhatsApp archive.
+Context found:
+${facts}
+
+User's query: "${query}"
+
+Answer the query based ONLY on the context above. If you don't know, say so.`;
+    
+    const answer = await generateChatReply(prompt);
+    res.json({ answer });
+  } catch (err) {
+    res.status(500).json({ error: 'Query failed' });
+  }
+});
+
 // WebSockets
 io.on('connection', (socket) => {
   console.log('Dashboard client connected');

@@ -5,6 +5,7 @@ import { runMigrations } from './db/sqlite';
 import { startServer } from './api/server';
 import { startArchiverCron } from './cron/archiver';
 import { startBackupCron } from './cron/backup';
+import { startBriefCron } from './cron/brief';
 
 async function bootstrap() {
   console.log('Running DB migrations...');
@@ -24,6 +25,7 @@ async function bootstrap() {
   // Start Background Jobs
   startArchiverCron();
   startBackupCron();
+  startBriefCron();
 
   console.log('System is running!');
 }
