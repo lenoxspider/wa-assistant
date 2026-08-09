@@ -15,14 +15,18 @@ It autonomously manages your WhatsApp conversations, intercepts messages, unders
 - **Web Search & Knowledge Base**: Queries the web for live facts and searches your custom injected knowledge base.
 - **Daily Briefs**: Wakes up daily to summarize your pending tasks and active alerts.
 - **Real-time Dashboard**: A beautiful React + Tailwind dashboard powered by WebSockets to monitor chats, tasks, alerts, and insights.
+- **Secure Authentication**: JWT-based login with automatic admin bootstrapping.
+- **Multi-Language (i18n)**: Fully internationalized frontend supporting instant English and Spanish toggling.
+- **Accessibility (a11y)**: Screen-reader ready with ARIA labels, semantic roles, and visible focus rings.
+- **Performance Optimized**: Uses virtualized lists (`react-virtuoso`) for massive chat histories and leverages lightweight 3B parameter models (Llama 3.2 3B / Qwen 2.5 3B) for sub-5 second response latency.
 
 ## Stack 🛠
 
 - **Backend**: Node.js, Express, TypeScript, SQLite (better-sqlite3)
 - **Queueing**: BullMQ + Redis
 - **WhatsApp**: @whiskeysockets/baileys
-- **AI**: Ollama (Llama 3 / Mistral), ChromaDB
-- **Frontend**: React, TailwindCSS, Vite
+- **AI**: llama-server (Llama 3.2 3B / Qwen 2.5 3B), ChromaDB
+- **Frontend**: React, TailwindCSS, Vite, Zustand (State Management), Vitest (Testing)
 
 ## Quickstart ⚡️
 
