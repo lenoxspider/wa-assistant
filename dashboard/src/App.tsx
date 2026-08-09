@@ -4,8 +4,11 @@ import { io } from 'socket.io-client';
 import { 
   Send, Settings, User, ListTodo, BookOpen, 
   Home, Activity, Search, Zap, Mic, Volume2, Cpu, 
-  Layers, MessageSquare, Sparkles, TrendingUp, ShieldAlert, BarChart3, RefreshCw
+  CheckCheck, Play, Pause, Eye, ShieldAlert, BarChart3, RefreshCw, 
+  Layers, MessageSquare, Sparkles, X, Menu, TrendingUp
 } from 'lucide-react';
+import { Virtuoso } from 'react-virtuoso';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = 'http://localhost:3001/api';
 const socket = io('http://localhost:3001');
@@ -21,6 +24,9 @@ function App() {
   const [replyText, setReplyText] = useState('');
   const [rules, setRules] = useState({ autoReplyEnabled: 1, silenceDuration: 0 });
   const [showSettings, setShowSettings] = useState(false);
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const [selectedVisionImage, setSelectedVisionImage] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [escalations, setEscalations] = useState<any[]>([]);
@@ -41,6 +47,10 @@ function App() {
   const [aiQuery, setAiQuery] = useState('');
   const [aiAnswer, setAiAnswer] = useState('');
   const [searchFilter, setSearchFilter] = useState('');
+
+  const activeTasksCount = tasks.filter(t => t.status !== 'completed').length;
+
+  const highlightMatches = (text: string) => text;
 
   useEffect(() => {
     fetchChats();
@@ -593,8 +603,7 @@ function App() {
         </div>
 
         {/* 3. Right Sidebar / WhatsApp Live Feed & Chat Drawer */}
-        <div className="w-[380px] bg-[#121422] border-l border-white/5 flex flex-col justify-between p-5 shrink-0 relative">
-          
+        <div className="hidden lg:flex w-[380px] bg-[#121422] border-l border-white/5 flex-col justify-between p-5 shrink-0 relative z-10">
           {/* Sidebar Top Search & Active Counters */}
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -647,10 +656,77 @@ function App() {
             
             {/* CHATS TAB */}
             {activeTab === 'chats' && (
+              selectedChat ? (
+                <div className="flex-1 min-h-[500px] h-[60vh] pr-1 flex flex-col">
+                  <div className="flex justify-between items-center bg-[#222741] p-3 rounded-2xl mb-2">
+                    <h4 className="text-white font-bold text-xs">{selectedChat.name || selectedChat.jid}</h4>
+                    <button onClick={(e) => { e.stopPropagation(); setSelectedChat(null); }} className="text-[10px] text-slate-400 bg-white/5 px-2 py-1 rounded-md hover:text-white">Back</button>
+                  </div>
+                  <Virtuoso
+                    style={{ height: '100%', flex: 1 }}
+                    data={messages}
+                    followOutput="smooth"
+                    initialTopMostItemIndex={messages.length - 1}
+                    itemContent={(i, m: any) => (
+                      <div className={`flex mb-2.5 ${m.fromMe ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[85%] p-3 rounded-2xl text-xs ${
+                          m.fromMe 
+                          ? 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-br-sm shadow-md' 
+                          : 'bg-[#1A1D30] text-slate-200 border border-white/5 rounded-bl-sm'
+                        }`}>
+                          
+                          {/* Audio Waveform Player Widget */}
+                          {m.mediaType === 'audioMessage' || m.mediaType === 'audio' ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={() => setPlayingAudioId(playingAudioId === m.id ? null : m.id)} 
+                                  className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"
+                                >
+                                  {playingAudioId === m.id ? <Pause size={12} /> : <Play size={12} />}
+                                </button>
+                                
+                                {/* Animated Audio Waveform Frequency Equalizer Bars */}
+                                <div className="flex-1 flex items-center gap-0.5 h-6">
+                                  {[40, 70, 30, 90, 60, 100, 45, 80, 55, 35, 95, 65, 40, 75].map((height, bIdx) => (
+                                    <div 
+                                      key={bIdx} 
+                                      className={`flex-1 rounded-full transition-all duration-300 ${playingAudioId === m.id ? 'bg-cyan-300 animate-pulse' : 'bg-white/40'}`} 
+                                      style={{ height: playingAudioId === m.id ? `${(height * (bIdx % 3 + 1)) % 100}%` : `${height / 3}%` }}
+                                    ></div>
+                                  ))}
+                                </div>
+                                <span className="text-[9px] text-white/80">0:15</span>
+                              </div>
+                              <span className="text-[9px] italic text-white/70 block">🎵 Qwen Omni Speech Note</span>
+                            </div>
+                          ) : m.mediaType === 'imageMessage' || m.mediaType === 'image' ? (
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-1.5 text-blue-300 font-semibold cursor-pointer" onClick={() => setSelectedVisionImage({ url: '', description: m.body })}>
+                                <Eye size={12}/> <span>View Vision Result</span>
+                              </div>
+                              <p className="whitespace-pre-wrap">{highlightMatches(m.body)}</p>
+                            </div>
+                          ) : (
+                            <p className="whitespace-pre-wrap leading-relaxed">{highlightMatches(m.body)}</p>
+                          )}
+
+                          <div className="flex items-center justify-end gap-1 mt-1 opacity-70 text-[9px]">
+                            <span>{new Date((m.timestamp || Date.now() / 1000) * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            {m.fromMe && (
+                              <CheckCheck size={12} className="text-cyan-300" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  />
+                </div>
+              ) : (
               filteredChats.map((c: any) => (
                 <div 
                   key={c.jid} 
-                  onClick={() => setSelectedChat(c)}
+                  onClick={() => { setSelectedChat(c); setShowMobileDrawer(true); }}
                   className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
                     selectedChat?.jid === c.jid 
                     ? 'bg-[#222741] border-blue-500/50 shadow-lg' 
@@ -670,6 +746,7 @@ function App() {
                   <span className="text-[10px] text-slate-500 font-medium">12:35</span>
                 </div>
               ))
+              )
             )}
 
             {/* TASKS TAB */}
@@ -787,8 +864,289 @@ function App() {
               </button>
             </form>
           </div>
-
         </div>
+
+        <AnimatePresence>
+          {showMobileDrawer && (
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(e, { offset, velocity }) => {
+                if (offset.y > 100 || velocity.y > 500) {
+                  setShowMobileDrawer(false);
+                }
+              }}
+              className="fixed inset-x-0 bottom-0 z-50 h-[85vh] bg-[#121422] rounded-t-3xl border-t border-white/10 p-5 flex flex-col shadow-2xl lg:hidden"
+            >
+              <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-4 cursor-grab active:cursor-grabbing shrink-0" />
+              {/* Sidebar Top Search & Active Counters */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                <MessageSquare size={16} className="text-blue-400" /> WhatsApp Feed
+              </h3>
+              <span className="text-[11px] font-bold text-slate-400 bg-[#1A1D30] px-2 py-0.5 rounded-full border border-white/5">
+                438 Online
+              </span>
+            </div>
+
+            {/* Search Filter Input */}
+            <div className="relative mb-4">
+              <Search size={14} className="absolute left-3 top-3 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Search chats or messages..." 
+                value={searchFilter}
+                onChange={e => setSearchFilter(e.target.value)}
+                className="w-full bg-[#1A1D30] border border-white/5 text-xs text-white pl-9 pr-3 py-2.5 rounded-xl focus:outline-none focus:border-blue-500/50 transition-all placeholder-slate-500"
+              />
+            </div>
+
+            {/* Nav Tabs Bar */}
+            <div className="grid grid-cols-5 gap-1 mb-4 bg-[#1A1D30] p-1 rounded-xl border border-white/5 text-[11px]">
+              <button onClick={() => setActiveTab('chats')} className={`py-1.5 rounded-lg font-medium transition-all ${activeTab === 'chats' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>Chats</button>
+              <button onClick={() => setActiveTab('tasks')} className={`py-1.5 rounded-lg font-medium transition-all ${activeTab === 'tasks' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>Tasks</button>
+              <button onClick={() => setActiveTab('kb')} className={`py-1.5 rounded-lg font-medium transition-all ${activeTab === 'kb' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>KB</button>
+              <button onClick={() => setActiveTab('escalations')} className={`py-1.5 rounded-lg font-medium transition-all ${activeTab === 'escalations' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>Alerts</button>
+              <button onClick={() => setActiveTab('insights')} className={`py-1.5 rounded-lg font-medium transition-all ${activeTab === 'insights' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>AI</button>
+            </div>
+          </div>
+
+          {/* Floating System Overlay Message Banner (Matches Mockup) */}
+          <div className="absolute top-28 right-4 left-4 z-20 bg-[#1F243B] border border-blue-500/30 rounded-2xl p-4 shadow-2xl backdrop-blur-xl flex items-start gap-3 transform hover:scale-[1.02] transition-all">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+              <Activity size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-center">
+                <h4 className="text-xs font-bold text-white">System Message</h4>
+                <span className="text-[10px] text-slate-400">10:32</span>
+              </div>
+              <p className="text-[11px] text-slate-300 truncate mt-0.5">Your surfing... WhatsApp pipeline running smoothly.</p>
+            </div>
+          </div>
+
+          {/* Active Tab Panel Views */}
+          <div className="flex-1 overflow-y-auto space-y-2 mt-20 pr-1">
+            
+            {/* CHATS TAB */}
+            {activeTab === 'chats' && (
+              selectedChat ? (
+                <div className="flex-1 min-h-[500px] h-[60vh] pr-1 flex flex-col">
+                  <div className="flex justify-between items-center bg-[#222741] p-3 rounded-2xl mb-2">
+                    <h4 className="text-white font-bold text-xs">{selectedChat.name || selectedChat.jid}</h4>
+                    <button onClick={(e) => { e.stopPropagation(); setSelectedChat(null); }} className="text-[10px] text-slate-400 bg-white/5 px-2 py-1 rounded-md hover:text-white">Back</button>
+                  </div>
+                  <Virtuoso
+                    style={{ height: '100%', flex: 1 }}
+                    data={messages}
+                    followOutput="smooth"
+                    initialTopMostItemIndex={messages.length - 1}
+                    itemContent={(i, m: any) => (
+                      <div className={`flex mb-2.5 ${m.fromMe ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[85%] p-3 rounded-2xl text-xs ${
+                          m.fromMe 
+                          ? 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-br-sm shadow-md' 
+                          : 'bg-[#1A1D30] text-slate-200 border border-white/5 rounded-bl-sm'
+                        }`}>
+                          
+                          {/* Audio Waveform Player Widget */}
+                          {m.mediaType === 'audioMessage' || m.mediaType === 'audio' ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={() => setPlayingAudioId(playingAudioId === m.id ? null : m.id)} 
+                                  className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"
+                                >
+                                  {playingAudioId === m.id ? <Pause size={12} /> : <Play size={12} />}
+                                </button>
+                                
+                                {/* Animated Audio Waveform Frequency Equalizer Bars */}
+                                <div className="flex-1 flex items-center gap-0.5 h-6">
+                                  {[40, 70, 30, 90, 60, 100, 45, 80, 55, 35, 95, 65, 40, 75].map((height, bIdx) => (
+                                    <div 
+                                      key={bIdx} 
+                                      className={`flex-1 rounded-full transition-all duration-300 ${playingAudioId === m.id ? 'bg-cyan-300 animate-pulse' : 'bg-white/40'}`} 
+                                      style={{ height: playingAudioId === m.id ? `${(height * (bIdx % 3 + 1)) % 100}%` : `${height / 3}%` }}
+                                    ></div>
+                                  ))}
+                                </div>
+                                <span className="text-[9px] text-white/80">0:15</span>
+                              </div>
+                              <span className="text-[9px] italic text-white/70 block">🎵 Qwen Omni Speech Note</span>
+                            </div>
+                          ) : m.mediaType === 'imageMessage' || m.mediaType === 'image' ? (
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-1.5 text-blue-300 font-semibold cursor-pointer" onClick={() => setSelectedVisionImage({ url: '', description: m.body })}>
+                                <Eye size={12}/> <span>View Vision Result</span>
+                              </div>
+                              <p className="whitespace-pre-wrap">{highlightMatches(m.body)}</p>
+                            </div>
+                          ) : (
+                            <p className="whitespace-pre-wrap leading-relaxed">{highlightMatches(m.body)}</p>
+                          )}
+
+                          <div className="flex items-center justify-end gap-1 mt-1 opacity-70 text-[9px]">
+                            <span>{new Date((m.timestamp || Date.now() / 1000) * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            {m.fromMe && (
+                              <CheckCheck size={12} className="text-cyan-300" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  />
+                </div>
+              ) : (
+              filteredChats.map((c: any) => (
+                <div 
+                  key={c.jid} 
+                  onClick={() => { setSelectedChat(c); setShowMobileDrawer(true); }}
+                  className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                    selectedChat?.jid === c.jid 
+                    ? 'bg-[#222741] border-blue-500/50 shadow-lg' 
+                    : 'bg-[#1A1D30]/60 border-white/5 hover:bg-[#1A1D30]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                      {(c.name || c.jid)[0]?.toUpperCase()}
+                    </div>
+                    <div className="overflow-hidden">
+                      <h4 className="text-xs font-bold text-white truncate">{c.name || c.jid.split('@')[0]}</h4>
+                      <p className="text-[10px] text-slate-400 truncate">{c.isGroup ? 'Group Chat' : 'Direct Message'}</p>
+                    </div>
+                  </div>
+
+                  <span className="text-[10px] text-slate-500 font-medium">12:35</span>
+                </div>
+              ))
+              )
+            )}
+
+            {/* TASKS TAB */}
+            {activeTab === 'tasks' && (
+              tasks.map((t: any) => (
+                <div key={t.id} className="bg-[#1A1D30] border border-white/5 p-3 rounded-2xl shadow-sm">
+                  <div className="flex justify-between items-start mb-1">
+                    <h4 className="text-xs font-bold text-blue-400">{t.description}</h4>
+                    {t.status !== 'completed' && (
+                      <button onClick={() => completeTask(t.id)} className="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded-lg border border-emerald-500/30">
+                        Done
+                      </button>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-slate-500">Source: {t.chatId.split('@')[0]}</span>
+                </div>
+              ))
+            )}
+
+            {/* KB TAB */}
+            {activeTab === 'kb' && (
+              <div className="space-y-3">
+                <form onSubmit={addKnowledge} className="bg-[#1A1D30] p-3 rounded-2xl border border-white/5 space-y-2">
+                  <input 
+                    type="text" 
+                    placeholder="Category (e.g. FAQ)" 
+                    value={newKbCategory}
+                    onChange={e => setNewKbCategory(e.target.value)}
+                    className="w-full bg-[#121422] border border-white/5 p-2 text-xs rounded-xl text-white focus:outline-none"
+                  />
+                  <textarea 
+                    placeholder="Paste fact or context..." 
+                    value={newKbContent}
+                    onChange={e => setNewKbContent(e.target.value)}
+                    className="w-full bg-[#121422] border border-white/5 p-2 text-xs rounded-xl text-white h-16 focus:outline-none"
+                  />
+                  <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 rounded-xl">
+                    Save Knowledge
+                  </button>
+                </form>
+                {knowledge.map((k: any) => (
+                  <div key={k.id} className="bg-[#1A1D30] p-3 rounded-xl border border-white/5">
+                    <span className="text-[9px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md uppercase">
+                      {k.category || 'general'}
+                    </span>
+                    <p className="text-xs text-slate-300 mt-1">{k.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ESCALATIONS ALERTS TAB */}
+            {activeTab === 'escalations' && (
+              escalations.map((esc: any, idx: number) => (
+                <div key={idx} className="bg-[#1A1D30] border-l-4 border-l-rose-500 p-3 rounded-2xl">
+                  <h4 className="text-xs font-bold text-rose-400">{esc.chatId.split('@')[0]}</h4>
+                  <p className="text-xs text-slate-300 my-1">{esc.reason}</p>
+                  <button onClick={() => resolveEscalation(esc.id)} className="w-full bg-emerald-500/20 text-emerald-400 text-xs py-1 rounded-xl border border-emerald-500/30">
+                    Resolve Ticket
+                  </button>
+                </div>
+              ))
+            )}
+
+            {/* AI QUERY TAB */}
+            {activeTab === 'insights' && (
+              <div className="space-y-3">
+                <form onSubmit={handleQuery} className="bg-[#1A1D30] p-3 rounded-2xl border border-white/5 space-y-2">
+                  <input 
+                    type="text" 
+                    placeholder="Ask AI about chat archive..." 
+                    value={aiQuery}
+                    onChange={e => setAiQuery(e.target.value)}
+                    className="w-full bg-[#121422] border border-white/5 p-2 text-xs rounded-xl text-white focus:outline-none"
+                  />
+                  <button type="submit" className="w-full bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold py-2 rounded-xl">
+                    Query Archive
+                  </button>
+                </form>
+                {aiAnswer && (
+                  <div className="bg-[#1A1D30] p-3 rounded-xl text-xs text-slate-200 border border-white/5 whitespace-pre-wrap">
+                    {aiAnswer}
+                  </div>
+                )}
+                {briefs.map((b: any) => (
+                  <div key={b.id} className="bg-[#1A1D30] p-3 rounded-xl border border-white/5">
+                    <span className="text-[10px] font-bold text-amber-400 block mb-1">{b.date}</span>
+                    <p className="text-xs text-slate-300 whitespace-pre-wrap">{b.contentJson}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+          </div>
+
+          {/* Quick Message Input Bar (Matches Mockup Footer) */}
+          <div className="pt-3 border-t border-white/5">
+            <form onSubmit={handleSend} className="bg-[#1A1D30] p-2 rounded-2xl border border-white/5 flex items-center gap-2">
+              <button type="button" className="p-2 text-slate-400 hover:text-white"><Volume2 size={16} /></button>
+              <button type="button" className="p-2 text-slate-400 hover:text-white"><Mic size={16} /></button>
+              
+              <input 
+                type="text" 
+                placeholder="Write your message..." 
+                value={replyText}
+                onChange={e => setReplyText(e.target.value)}
+                className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none"
+              />
+
+              <button 
+                type="submit" 
+                className="w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-600/30 transition-all shrink-0"
+              >
+                <Send size={16} />
+              </button>
+            </form>
+          </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       </div>
     </div>
