@@ -24,7 +24,7 @@ function fetchPersona(senderJid: string) {
       return traits.join(', ');
     }
   } catch(e) {}
-  return "Friendly, concise, and helpful."; // default
+  return "Casual, blunt, direct, uses lowercase and slang, occasional humor/emojis, technically knowledgeable, curious, impatient with unnecessary explanations."; // default
 }
 
 export async function processMessagePipeline(msg: MessageEvent) {
