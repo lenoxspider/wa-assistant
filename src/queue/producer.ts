@@ -4,6 +4,10 @@ import db from '../db/sqlite';
 
 export async function enqueueIncoming(msgObj: MessageEvent) {
   try {
+    if (msgObj.chatId === 'status@broadcast' || msgObj.chatId.endsWith('@g.us')) {
+      return;
+    }
+
     const existing = db.prepare('SELECT id FROM messages WHERE id = ?').get(msgObj.messageId);
     if (existing) {
       console.log(`Duplicate message ignored: ${msgObj.messageId}`);

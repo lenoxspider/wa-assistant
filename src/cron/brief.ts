@@ -12,14 +12,13 @@ export function startBriefCron() {
       const tasks = db.prepare("SELECT description, dueBy FROM tasks WHERE status != 'completed'").all();
       const escalations = db.prepare("SELECT chatId, reason FROM escalations").all();
       
-      const prompt = `You are an AI assistant managing the user's WhatsApp. Generate a concise, friendly daily briefing.
-
-Pending Tasks: ${JSON.stringify(tasks)}
-Active Alerts/Escalations: ${JSON.stringify(escalations)}
-
+      const systemPrompt = `You are an AI assistant managing the user's WhatsApp. Generate a concise, friendly daily briefing.
 Provide a short summary in markdown. Don't invent tasks that aren't listed. If both are empty, say "You have no pending tasks or alerts today!"`;
 
-      const summary = await generateChatReply(prompt);
+      const userMessage = `Pending Tasks: ${JSON.stringify(tasks)}
+Active Alerts/Escalations: ${JSON.stringify(escalations)}`;
+
+      const summary = await generateChatReply(systemPrompt, userMessage);
       
       db.prepare("INSERT INTO briefs (date, contentJson) VALUES (date('now'), ?)").run(summary);
       console.log('Generated daily brief successfully.');

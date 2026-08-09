@@ -4,15 +4,15 @@ import { upsertMemory } from '../db/chroma';
 import crypto from 'crypto';
 
 export async function extractMemories(chatId: string, historyText: string, senderJid: string) {
-  const prompt = `You are a fact extractor. Given the following conversation, output a JSON list of new facts about the user. 
+  const systemPrompt = `You are a fact extractor. Given the following conversation, output a JSON list of new facts about the user. 
 Format: [{"attribute":"location", "value":"Berlin", "confidence":"high"}]
-If no new facts, return [].
+If no new facts, return [].`;
 
-Conversation:
+  const userMessage = `Conversation:
 ${historyText}`;
 
   try {
-    const reply = await generateChatReply(prompt);
+    const reply = await generateChatReply(systemPrompt, userMessage);
     const jsonStart = reply.indexOf('[');
     const jsonEnd = reply.lastIndexOf(']') + 1;
     if (jsonStart === -1 || jsonEnd === 0) return;

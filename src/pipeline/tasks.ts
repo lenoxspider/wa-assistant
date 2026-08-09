@@ -3,15 +3,15 @@ import db from '../db/sqlite';
 import { syncTaskToExternal } from '../services/externalSync';
 
 export async function extractTasks(chatId: string, historyText: string) {
-  const prompt = `You are a task extractor. Given the following conversation, output a JSON list of tasks or action items that the user wants to accomplish or asks you to remember.
+  const systemPrompt = `You are a task extractor. Given the following conversation, output a JSON list of tasks or action items that the user wants to accomplish or asks you to remember.
 Format: [{"description":"Buy milk", "dueBy":"2026-08-10T12:00:00Z"}]
-If no new tasks, return [].
+If no new tasks, return [].`;
 
-Conversation:
+  const userMessage = `Conversation:
 ${historyText}`;
 
   try {
-    const reply = await generateChatReply(prompt);
+    const reply = await generateChatReply(systemPrompt, userMessage);
     const jsonStart = reply.indexOf('[');
     const jsonEnd = reply.lastIndexOf(']') + 1;
     if (jsonStart === -1 || jsonEnd === 0) return;

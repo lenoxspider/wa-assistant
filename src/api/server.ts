@@ -25,18 +25,7 @@ const upload = multer({ dest: path.resolve(process.cwd(), 'temp') });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
 
-// Bootstrap Admin
-try {
-  const usersCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as {count: number};
-  if (usersCount.count === 0) {
-    const salt = bcrypt.genSaltSync(10);
-    const hash = bcrypt.hashSync('admin', salt);
-    db.prepare('INSERT INTO users (username, passwordHash, role) VALUES (?, ?, ?)').run('admin', hash, 'admin');
-    console.log('Bootstrapped default admin user');
-  }
-} catch (e) {
-  // If table doesn't exist yet (migrations pending)
-}
+// Bootstrap Admin moved to startServer
 
 // Auth Router
 app.post('/api/auth/login', (req, res) => {
@@ -212,15 +201,15 @@ app.post('/api/query', async (req, res) => {
     const memoryResults = await queryMemory(query, 5);
     const facts = memoryResults?.documents?.[0]?.join('\n') || '';
     
-    const prompt = `You are a helpful assistant querying the user's personal WhatsApp archive.
+    const systemPrompt = `You are a helpful assistant querying the user's personal WhatsApp archive.
 Context found:
 ${facts}
 
-User's query: "${query}"
-
 Answer the query based ONLY on the context above. If you don't know, say so.`;
     
-    const answer = await generateChatReply(prompt);
+    const userMessage = `User's query: "${query}"`;
+    
+    const answer = await generateChatReply(systemPrompt, userMessage);
     res.json({ answer });
   } catch (err) {
     res.status(500).json({ error: 'Query failed' });
@@ -366,6 +355,19 @@ export function emitEscalation(data: any) {
 }
 
 export function startServer(port = 3001) {
+  // Bootstrap Admin
+  try {
+    const usersCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as {count: number};
+    if (usersCount.count === 0) {
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync('admin', salt);
+      db.prepare('INSERT INTO users (username, passwordHash, role) VALUES (?, ?, ?)').run('admin', hash, 'admin');
+      console.log('Bootstrapped default admin user');
+    }
+  } catch (e) {
+    console.error('Failed to bootstrap admin:', e);
+  }
+
   httpServer.listen(port, () => {
     console.log(`Dashboard API server running on port ${port}`);
   }).on('error', (err: any) => {

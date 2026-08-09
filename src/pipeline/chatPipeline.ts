@@ -108,18 +108,15 @@ export async function processMessagePipeline(msg: MessageEvent) {
     .replace('{knowledge_snippets}', finalKnowledge)
     .replace('{memory_facts}', memoryFacts);
 
-  const fullPrompt = `${systemPrompt}
-
-Conversation history:
+  const userMessage = `Conversation history:
 ${historyText}
 
-User message: ${msg.body}
-`;
+User message: ${msg.body}`;
 
   console.log('Sending prompt to llama-server...');
   
   try {
-    const reply = await generateChatReply(fullPrompt);
+    const reply = await generateChatReply(systemPrompt, userMessage);
     
     if (reply.startsWith('!ESCALATE') || reply.startsWith('!NO_REPLY')) {
       console.log('LLM requested escalation or no reply:', reply);
