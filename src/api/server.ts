@@ -17,14 +17,62 @@ app.use(express.json());
 
 import path from 'path';
 import fs from 'fs';
+import multer from 'multer';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
-const AUTH_TOKEN = process.env.API_TOKEN || 'secret-token';
-app.use('/api', (req, res, next) => {
-  const token = req.headers.authorization;
-  if (process.env.REQUIRE_AUTH === 'true' && token !== `Bearer ${AUTH_TOKEN}`) {
-    return res.status(401).json({ error: 'Unauthorized' });
+const upload = multer({ dest: path.resolve(process.cwd(), 'temp') });
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
+
+// Bootstrap Admin
+try {
+  const usersCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as {count: number};
+  if (usersCount.count === 0) {
+    const salt = bcrypt.genSaltSync(10);
+    const hash = bcrypt.hashSync('admin', salt);
+    db.prepare('INSERT INTO users (username, passwordHash, role) VALUES (?, ?, ?)').run('admin', hash, 'admin');
+    console.log('Bootstrapped default admin user');
   }
-  next();
+} catch (e) {
+  // If table doesn't exist yet (migrations pending)
+}
+
+// Auth Router
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as any;
+    
+    if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
+  } catch (err) {
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// Protected routes middleware
+app.use('/api', (req, res, next) => {
+  if (req.path === '/auth/login') return next(); // Exclude login
+  
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (process.env.REQUIRE_AUTH === 'false') return next(); // Opt-out path for dev
+    return res.status(401).json({ error: 'Unauthorized: No token provided' });
+  }
+  
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    (req as any).user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+  }
 });
 
 const dashboardDist = path.resolve(process.cwd(), 'dashboard', 'dist');
@@ -225,6 +273,83 @@ app.get('/api/settings', (req, res) => {
 app.post('/api/settings', (req, res) => {
   appSettings = { ...appSettings, ...req.body };
   res.json({ success: true, settings: appSettings });
+});
+
+// Backup & Restore (Task 13.5)
+app.post('/api/backup/restore', upload.single('backup'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const dbPath = process.env.DATABASE_PATH || path.resolve(process.cwd(), 'data', 'wa.db');
+    const backupPath = `${dbPath}.bak`;
+
+    // Backup current DB
+    if (fs.existsSync(dbPath)) {
+      fs.copyFileSync(dbPath, backupPath);
+    }
+
+    // Replace with uploaded file
+    fs.copyFileSync(req.file.path, dbPath);
+    
+    // Clean up temp file
+    fs.unlinkSync(req.file.path);
+
+    res.json({ success: true, message: 'Database restored successfully! Please restart the server to apply changes.' });
+  } catch (err) {
+    console.error('Failed to restore backup:', err);
+    res.status(500).json({ error: 'Failed to restore backup' });
+  }
+});
+
+// Contact Persona & Memory Side-Sheet API
+app.get('/api/contacts/:jid/persona', (req, res) => {
+  try {
+    const jid = req.params.jid;
+    const personaRow = db.prepare('SELECT traitsJson FROM personas WHERE senderJid = ?').get(jid) as any;
+    const traits = personaRow?.traitsJson ? JSON.parse(personaRow.traitsJson) : ["Casual", "Direct", "Tech-oriented", "Informal"];
+    const memories = db.prepare('SELECT * FROM memories WHERE chatId = ? OR senderJid = ? ORDER BY id DESC LIMIT 10').all(jid, jid);
+    res.json({ jid, traits, memories });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch contact persona' });
+  }
+});
+
+app.post('/api/contacts/:jid/memories', (req, res) => {
+  try {
+    const { attribute, value } = req.body;
+    db.prepare('INSERT INTO memories (chatId, senderJid, attribute, value, confidence) VALUES (?, ?, ?, ?, "1.0")')
+      .run(req.params.jid, req.params.jid, attribute || 'fact', value);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add memory' });
+  }
+});
+
+// Export Data Endpoint
+app.get('/api/export', (req, res) => {
+  try {
+    const type = (req.query.type as string) || 'chats';
+    if (type === 'tasks') {
+      const data = db.prepare('SELECT * FROM tasks').all();
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', 'attachment; filename=tasks_export.json');
+      return res.send(JSON.stringify(data, null, 2));
+    }
+    if (type === 'briefs') {
+      const data = db.prepare('SELECT * FROM briefs').all();
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', 'attachment; filename=briefs_export.json');
+      return res.send(JSON.stringify(data, null, 2));
+    }
+    const data = db.prepare('SELECT * FROM messages ORDER BY timestamp DESC LIMIT 200').all();
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename=chats_export.json');
+    res.send(JSON.stringify(data, null, 2));
+  } catch (err) {
+    res.status(500).json({ error: 'Export failed' });
+  }
 });
 
 // WebSockets

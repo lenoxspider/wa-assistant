@@ -111,3 +111,15 @@
 - `[x]` 12.6 Documentation (README, API docs)
 - `[x]` 12.7 Containerisation (Dockerfile)
 - `[x]` 12.8 Production checklist & deployment
+
+## Phase 13 – Web UI Master Polish & Advanced Production Features
+- `[x]` 13.1 Performance at Scale: Virtualized message rendering with `react-virtuoso`
+- `[x]` 13.2 Mobile & Responsive Layout: Mobile bottom drawer & swipe gestures
+- `[x]` 13.3 Global State Management: Zustand store slices (chats, tasks, UI state)
+- `[x]` 13.4 Toast Error Handling System: Sonner toasts & persistent dead-letter banner
+- `[x]` 13.5 Backup & Restore UI: Drag-and-drop restore upload modal & API endpoint
+- `[x]` 13.6 Auth & Multi-User Security: JWT authentication flow, login page & role checks
+- `[x]` 13.7 Accessibility & ARIA Audit: ARIA labels, dialog roles & visible focus rings
+- `[x]` 13.8 Multi-Language i18n Support: `react-i18next` translation framework & language dropdown
+- `[x]` 13.9 UI Component Test Suite: Vitest + React Testing Library component coverage
+
