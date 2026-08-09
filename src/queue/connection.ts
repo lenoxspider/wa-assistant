@@ -1,8 +1,16 @@
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 
-const connection = new IORedis(process.env.REDIS_URL || 'redis://127.0.0.1:6379');
+export const redisOptions = {
+  host: process.env.REDIS_HOST || '127.0.0.1',
+  port: parseInt(process.env.REDIS_PORT || '6379'),
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
+};
 
-export const incomingQueue = new Queue('incoming-messages', { connection });
+const connection = new IORedis(redisOptions);
+
+export const incomingQueue = new Queue('incoming-messages', { connection: redisOptions });
+export const escalationQueue = new Queue('escalation-timer', { connection: redisOptions });
 
 export { connection };

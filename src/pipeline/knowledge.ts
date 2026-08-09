@@ -1,5 +1,5 @@
 import db from '../db/sqlite';
-import { embedText } from './embedding';
+import { embed as embedText } from './embedding';
 import axios from 'axios';
 
 const CHROMA_URL = process.env.CHROMA_URL || 'http://localhost:8000';

@@ -4,11 +4,18 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsc && node dist/src/index.js",
+    "build": "tsc",
+    "start": "node dist/src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:pipeline": "tsc && node dist/scripts/test_pipeline.js",
+    "test:voice": "tsc && node dist/scripts/test_voice_flow.js",
+    "test:all": "tsc && node dist/tests/unit/sanitizer.test.js && node dist/tests/e2e/api.test.js"
   },
   "keywords": [],
   "type": "commonjs",
   "dependencies": {
+    "@types/qrcode-terminal": "^0.12.2",
     "@whiskeysockets/baileys": "^7.0.0-rc14",
     "axios": "^1.19.0",
     "better-sqlite3": "^13.0.3",
@@ -19,6 +26,7 @@
     "express": "^5.2.1",
     "ioredis": "^6.0.0",
     "pino": "^10.3.1",
+    "qrcode-terminal": "^0.12.0",
     "socket.io": "^4.8.3"
   },
   "allowScripts": {

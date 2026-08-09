@@ -1,5 +1,6 @@
 import { generateChatReply } from './llmClient';
 import db from '../db/sqlite';
+import { syncTaskToExternal } from '../services/externalSync';
 
 export async function extractTasks(chatId: string, historyText: string) {
   const prompt = `You are a task extractor. Given the following conversation, output a JSON list of tasks or action items that the user wants to accomplish or asks you to remember.
@@ -20,12 +21,16 @@ ${historyText}`;
     for (const task of tasks) {
       if (!task.description) continue;
       
-      db.prepare(`
+      const res = db.prepare(`
         INSERT INTO tasks (chatId, description, dueBy, status, externalSyncStatus)
         VALUES (?, ?, ?, 'pending', 'pending')
       `).run(chatId, task.description, task.dueBy || null);
       
-      console.log(`Extracted task: ${task.description}`);
+      const taskId = Number(res.lastInsertRowid);
+      console.log(`Extracted task #${taskId}: ${task.description}`);
+
+      // Sync to external integration (Todoist/Notion/Webhook)
+      syncTaskToExternal(taskId, task.description, task.dueBy);
     }
   } catch (error) {
     console.error('Failed to extract tasks:', error);

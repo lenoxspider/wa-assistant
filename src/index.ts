@@ -1,7 +1,9 @@
 import { initWhatsApp } from './baileys/client';
 import { waEvents } from './baileys/events';
 import { enqueueIncoming } from './queue/producer';
+import './queue/worker';
 import { runMigrations } from './db/sqlite';
+import { initChroma } from './db/chroma';
 import { startServer } from './api/server';
 import { startArchiverCron } from './cron/archiver';
 import { startBackupCron } from './cron/backup';
@@ -10,6 +12,9 @@ import { startBriefCron } from './cron/brief';
 async function bootstrap() {
   console.log('Running DB migrations...');
   runMigrations();
+
+  console.log('Initializing ChromaDB collections...');
+  await initChroma();
 
   console.log('Connecting to WhatsApp...');
   await initWhatsApp();

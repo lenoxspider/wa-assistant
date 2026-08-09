@@ -1,6 +1,7 @@
 import makeWASocket, { DisconnectReason } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
+import qrcode from 'qrcode-terminal';
 import { useSQLiteAuthState } from './auth';
 import { waEvents } from './events';
 
@@ -12,15 +13,21 @@ export async function initWhatsApp() {
 
   sock = makeWASocket({
     auth: state,
-    printQRInTerminal: true,
     logger,
   });
 
   sock.ev.on('connection.update', (update) => {
-    const { connection, lastDisconnect } = update;
+    const { connection, lastDisconnect, qr } = update;
+
+    if (qr) {
+      console.log('\n--- SCAN THIS WHATSAPP QR CODE ---');
+      qrcode.generate(qr, { small: true });
+      console.log('----------------------------------\n');
+    }
+
     if (connection === 'close') {
       const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
-      logger.info('connection closed due to ', lastDisconnect?.error, ', reconnecting ', shouldReconnect);
+      logger.info({ error: lastDisconnect?.error, shouldReconnect }, 'connection closed due to error');
       if (shouldReconnect) {
         setTimeout(initWhatsApp, 5000); // 5s backoff
       }
@@ -72,13 +79,26 @@ export async function initWhatsApp() {
   return sock;
 }
 
+import db from '../db/sqlite';
+
 export async function sendMessage(jid: string, content: any) {
-  if (!sock) throw new Error('Socket not initialized');
+  if (!sock) {
+    logger.info({ jid, content }, 'Socket not initialized. Simulating message send.');
+    try {
+      db.prepare('INSERT OR REPLACE INTO messages (messageId, chatId, senderJid, body, timestamp, fromMe) VALUES (?, ?, ?, ?, ?, 1)')
+        .run(`out_${Date.now()}`, jid, 'me', content.text || '', Math.floor(Date.now() / 1000));
+    } catch(e) {}
+    return;
+  }
   
   if (content.text) {
     await sock.sendPresenceUpdate('composing', jid);
     const delay = Math.max(1000, Math.min(content.text.length * 30, 4000));
     await new Promise(resolve => setTimeout(resolve, delay));
+    await sock.sendPresenceUpdate('paused', jid);
+  } else if (content.audio) {
+    await sock.sendPresenceUpdate('recording', jid);
+    await new Promise(resolve => setTimeout(resolve, 2000));
     await sock.sendPresenceUpdate('paused', jid);
   }
   

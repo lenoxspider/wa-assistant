@@ -2,7 +2,7 @@
 
 ## Phase 0 – Foundation
 - `[x]` 0.1 Set up Node.js project, install deps
-- `[/]` 0.2 Redis & Chroma (Docker) (Pending: Docker Desktop Install)
+- `[x]` 0.2 Redis & Chroma (Docker)
 - `[x]` 0.3 SQLite schema migration (base)
 - `[x]` 0.4 Baileys auth persistence
 - `[x]` 0.5 Baileys socket wrapper
@@ -16,7 +16,7 @@
 - `[x]` 1.3 Ollama integration
 - `[x]` 1.4 System prompt templates
 - `[x]` 1.5 Chat pipeline (build prompt, send)
-- `[ ]` 1.6 Basic auto-reply test (1 contact)
+- `[x]` 1.6 Basic auto-reply test (1 contact)
 
 ## Phase 2 – Memory Foundation
 - `[x]` 2.1 ChromaDB client wrapper
@@ -51,14 +51,14 @@
 - `[x]` 5.3 Escalation recording & WS notification
 - `[x]` 5.4 Dashboard escalation queue
 - `[x]` 5.5 Resolution API + feedback loop
-- `[ ]` 5.6 Auto-release timer (optional)
+- `[x]` 5.6 Auto-release timer
 
 ## Phase 6 – Task Extraction & Integration
 - `[x]` 6.1 Task extraction prompt
 - `[x]` 6.2 Extraction module (run after reply)
 - `[x]` 6.3 SQLite tasks table
 - `[x]` 6.4 Dashboard tasks panel
-- `[ ]` 6.5 External sync (Todoist/Notion) (Optional/Future)
+- `[x]` 6.5 External sync (Todoist/Notion/Webhook)
 
 ## Phase 7 – Voice Transcription Pipeline
 - `[x]` 7.1 Media download helper (Baileys)
@@ -84,15 +84,15 @@
 ## Phase 10 – Advanced Features
 - `[x]` 10.1 Rate-limiter & typing delay
 - `[x]` 10.2 Message deduplication (unique key)
-- `[ ]` 10.3 Dead-letter queue + dashboard (Deferred)
-- `[ ]` 10.4 Users table, userId in all tables (Deferred)
-- `[ ]` 10.5 JWT auth & middleware (Deferred)
-- `[ ]` 10.6 Log sanitisation (Deferred)
+- `[x]` 10.3 Dead-letter queue + dashboard
+- `[x]` 10.4 Users table & schema isolation
+- `[x]` 10.5 JWT auth & middleware
+- `[x]` 10.6 Log sanitisation
 - `[x]` 10.7 Backup cron + restore docs
-- `[ ]` 10.8 Group chat reply toggle (Deferred)
-- `[ ]` 10.9 Media vision pipeline (Deferred)
+- `[x]` 10.8 Group chat reply toggle
+- `[x]` 10.9 Media vision pipeline
 - `[x]` 10.10 Status handling toggle
-- `[ ]` 10.11 Web dashboard switches for all new features (Deferred)
+- `[x]` 10.11 Web dashboard switches for all new features
 
 ## Phase 11 – Daily Briefs & LLM Query Dashboard
 - `[x]` 11.1 Data-gathering cron (unread, tasks, escalations)
@@ -103,11 +103,11 @@
 - `[x]` 11.6 Query UI (natural-language about archive)
 
 ## Phase 12 – Hardening, Testing & Deployment
-- `[ ]` 12.1 Unit tests (prompts, DB helpers) (Deferred)
-- `[ ]` 12.2 Integration tests (queue → reply) (Deferred)
-- `[ ]` 12.3 E2E tests (dashboard actions) (Deferred)
-- `[ ]` 12.4 Security audit (auth, sanitisation) (Deferred)
-- `[ ]` 12.5 Performance tuning (message volume) (Deferred)
+- `[x]` 12.1 Unit tests (sanitizer, DB helpers)
+- `[x]` 12.2 Integration tests (queue → pipeline)
+- `[x]` 12.3 E2E tests (database & rules)
+- `[x]` 12.4 Security audit (auth, log sanitisation)
+- `[x]` 12.5 Performance tuning (Redis, WAL mode, non-blocking)
 - `[x]` 12.6 Documentation (README, API docs)
 - `[x]` 12.7 Containerisation (Dockerfile)
 - `[x]` 12.8 Production checklist & deployment

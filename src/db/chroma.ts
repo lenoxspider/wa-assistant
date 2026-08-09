@@ -3,13 +3,25 @@ import { embed } from '../pipeline/embedding';
 
 const CHROMA_HOST = process.env.CHROMA_HOST || 'http://localhost:8000';
 
+export async function getOrCreateCollection(name: string): Promise<string | null> {
+  try {
+    const res = await axios.get(`${CHROMA_HOST}/api/v1/collections`);
+    const collections = res.data;
+    let col = Array.isArray(collections) ? collections.find((c: any) => c.name === name) : null;
+    
+    if (!col) {
+      const createRes = await axios.post(`${CHROMA_HOST}/api/v1/collections`, { name });
+      col = createRes.data;
+    }
+    return col ? (col.id || col.name) : null;
+  } catch (e: any) {
+    return null;
+  }
+}
+
 export async function initChroma() {
-  try {
-    await axios.post(`${CHROMA_HOST}/api/v1/collections`, { name: 'memories' });
-  } catch(e) {}
-  try {
-    await axios.post(`${CHROMA_HOST}/api/v1/collections`, { name: 'knowledge' });
-  } catch(e) {}
+  await getOrCreateCollection('memories');
+  await getOrCreateCollection('knowledge');
 }
 
 export async function upsertMemory(id: string, text: string, metadata: any) {
@@ -17,8 +29,8 @@ export async function upsertMemory(id: string, text: string, metadata: any) {
     const embedding = await embed(text);
     if (!embedding || embedding.length === 0) return;
 
-    const collRes = await axios.get(`${CHROMA_HOST}/api/v1/collections/memories`);
-    const collectionId = collRes.data.id;
+    const collectionId = await getOrCreateCollection('memories');
+    if (!collectionId) return;
 
     await axios.post(`${CHROMA_HOST}/api/v1/collections/${collectionId}/upsert`, {
       ids: [id],
@@ -26,8 +38,8 @@ export async function upsertMemory(id: string, text: string, metadata: any) {
       metadatas: [metadata],
       documents: [text]
     });
-  } catch (e) {
-    console.error('Chroma upsert failed:', e);
+  } catch (e: any) {
+    console.warn('Chroma memory upsert skipped (Chroma or embedding unavailable)');
   }
 }
 
@@ -36,8 +48,8 @@ export async function queryMemory(queryText: string, nResults: number = 5) {
     const embedding = await embed(queryText);
     if (!embedding || embedding.length === 0) return null;
 
-    const collRes = await axios.get(`${CHROMA_HOST}/api/v1/collections/memories`);
-    const collectionId = collRes.data.id;
+    const collectionId = await getOrCreateCollection('memories');
+    if (!collectionId) return null;
 
     const response = await axios.post(`${CHROMA_HOST}/api/v1/collections/${collectionId}/query`, {
       query_embeddings: [embedding],
@@ -45,8 +57,8 @@ export async function queryMemory(queryText: string, nResults: number = 5) {
     });
 
     return response.data;
-  } catch (e) {
-    console.error('Chroma query failed:', e);
+  } catch (e: any) {
+    console.warn('Chroma memory query skipped (Chroma or embedding unavailable)');
     return null;
   }
 }

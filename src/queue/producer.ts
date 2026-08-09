@@ -1,4 +1,4 @@
-import { incomingQueue } from './connection';
+import { incomingQueue, escalationQueue } from './connection';
 import { MessageEvent } from '../baileys/events';
 import db from '../db/sqlite';
 
@@ -35,5 +35,18 @@ export async function enqueueIncoming(msgObj: MessageEvent) {
     console.log(`Enqueued message ${msgObj.messageId}`);
   } catch (error) {
     console.error('Failed to enqueue message:', error);
+  }
+}
+
+export async function scheduleAutoRelease(escalationId: number, chatId: string, delayMs: number = 7200000) {
+  try {
+    await escalationQueue.add(
+      'auto-release',
+      { escalationId, chatId },
+      { delay: delayMs, attempts: 3 }
+    );
+    console.log(`Scheduled auto-release timer for escalation ${escalationId} (delay: ${delayMs}ms)`);
+  } catch (err) {
+    console.error('Failed to schedule auto-release timer:', err);
   }
 }

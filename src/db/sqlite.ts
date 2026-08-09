@@ -13,7 +13,10 @@ if (!fs.existsSync(dataDir)) {
 const db = new Database(dbPath);
 
 export function runMigrations() {
-  const migrationsDir = path.resolve(__dirname, 'migrations');
+  let migrationsDir = path.resolve(__dirname, 'migrations');
+  if (!fs.existsSync(migrationsDir)) {
+    migrationsDir = path.resolve(process.cwd(), 'src', 'db', 'migrations');
+  }
   if (!fs.existsSync(migrationsDir)) return;
 
   const files = fs.readdirSync(migrationsDir).sort();
@@ -36,6 +39,7 @@ export function runMigrations() {
       db.exec(sql);
       db.prepare('INSERT INTO _migrations (filename) VALUES (?)').run(file);
     }
+  }
 }
 
 export function fetchChatHistory(chatId: string, limit: number = 30) {

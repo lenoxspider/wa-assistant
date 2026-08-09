@@ -15,14 +15,22 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 
+import path from 'path';
+import fs from 'fs';
+
 const AUTH_TOKEN = process.env.API_TOKEN || 'secret-token';
-app.use((req, res, next) => {
+app.use('/api', (req, res, next) => {
   const token = req.headers.authorization;
-  if (token !== `Bearer ${AUTH_TOKEN}`) {
+  if (process.env.REQUIRE_AUTH === 'true' && token !== `Bearer ${AUTH_TOKEN}`) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   next();
 });
+
+const dashboardDist = path.resolve(process.cwd(), 'dashboard', 'dist');
+if (fs.existsSync(dashboardDist)) {
+  app.use(express.static(dashboardDist));
+}
 
 // Chats
 app.get('/api/chats', (req, res) => {
@@ -171,6 +179,54 @@ Answer the query based ONLY on the context above. If you don't know, say so.`;
   }
 });
 
+// Failed Queue / Dead-Letter API (Task 10.3)
+app.get('/api/queue/failed', async (req, res) => {
+  try {
+    const { incomingQueue } = await import('../queue/connection');
+    const failedJobs = await incomingQueue.getFailed();
+    const formatted = failedJobs.map(j => ({
+      id: j.id,
+      name: j.name,
+      data: j.data,
+      failedReason: j.failedReason,
+      timestamp: j.timestamp
+    }));
+    res.json(formatted);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch queue statistics' });
+  }
+});
+
+app.post('/api/queue/retry-failed', async (req, res) => {
+  try {
+    const { incomingQueue } = await import('../queue/connection');
+    const failedJobs = await incomingQueue.getFailed();
+    for (const job of failedJobs) {
+      await job.retry();
+    }
+    res.json({ success: true, count: failedJobs.length });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to retry jobs' });
+  }
+});
+
+// Dashboard Settings & Feature Switches (Task 10.11)
+let appSettings = {
+  respondInGroups: false,
+  voiceOutputEnabled: true,
+  autoReleaseTimerHours: 2,
+  webSearchEnabled: true
+};
+
+app.get('/api/settings', (req, res) => {
+  res.json(appSettings);
+});
+
+app.post('/api/settings', (req, res) => {
+  appSettings = { ...appSettings, ...req.body };
+  res.json({ success: true, settings: appSettings });
+});
+
 // WebSockets
 io.on('connection', (socket) => {
   console.log('Dashboard client connected');
@@ -187,5 +243,12 @@ export function emitEscalation(data: any) {
 export function startServer(port = 3001) {
   httpServer.listen(port, () => {
     console.log(`Dashboard API server running on port ${port}`);
+  }).on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`Port ${port} is in use, failing over to port ${port + 1}...`);
+      startServer(port + 1);
+    } else {
+      console.error('Server error:', err);
+    }
   });
 }

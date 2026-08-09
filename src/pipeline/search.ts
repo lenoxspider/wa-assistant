@@ -1,4 +1,4 @@
-import { search } from 'duck-duck-scrape';
+import { search, SafeSearchType } from 'duck-duck-scrape';
 import db from '../db/sqlite';
 
 export async function performWebSearch(query: string): Promise<string> {
@@ -11,7 +11,7 @@ export async function performWebSearch(query: string): Promise<string> {
     }
 
     console.log(`Searching the web for: ${query}`);
-    const results = await search(query, { safeSearch: 1 });
+    const results = await search(query, { safeSearch: SafeSearchType.STRICT });
     
     const summary = results.results.slice(0, 3).map(r => `${r.title}: ${r.description}`).join('\n');
     
