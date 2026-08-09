@@ -28,12 +28,25 @@ It autonomously manages your WhatsApp conversations, intercepts messages, unders
 - **AI**: llama-server (Llama 3.2 3B / Qwen 2.5 3B), ChromaDB
 - **Frontend**: React, TailwindCSS, Vite, Zustand (State Management), Vitest (Testing)
 
+## Prerequisites & Configuration ⚙️
+
+Before starting the bot, you must provide the following:
+
+1. **Environment Variables**: Copy `.env.example` to `.env` and fill in the required keys.
+2. **AI Models**: Download a GGUF model (we recommend `Llama-3.2-3B-Instruct-uncensored-Q4_K_M.gguf` or `Qwen2.5-Omni-3B-UD-Q4_K_XL.gguf`) and place it in your `D:\models\` directory.
+3. **Persona Setup**: Edit `config/prompts/main_persona.txt` to define your personality, tone, and texting style so the AI knows exactly how to impersonate you.
+
 ## Quickstart ⚡️
 
-### 1. Start Infrastructure (Redis & ChromaDB)
-Ensure you have Docker installed.
+### 1. Start AI Server & Infrastructure
+Ensure you have Docker installed for Redis and ChromaDB, and `llama.cpp` for the local LLM.
+
 ```bash
+# Start Redis and ChromaDB
 docker-compose up -d
+
+# Start the local LLM in a separate terminal
+./scripts/start_llama_server.bat
 ```
 
 ### 2. Start the Backend Worker & API
