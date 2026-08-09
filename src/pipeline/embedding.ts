@@ -7,7 +7,7 @@ export async function embed(text: string): Promise<number[]> {
     // Try llama-server /embedding endpoint
     const response = await axios.post(`${LLAMA_SERVER_URL}/embedding`, {
       content: text
-    }, { timeout: 10000 });
+    }, { timeout: 1000 });
 
     if (Array.isArray(response.data)) {
       return response.data[0]?.embedding || response.data;
@@ -20,7 +20,7 @@ export async function embed(text: string): Promise<number[]> {
       // Fallback to /v1/embeddings endpoint
       const response = await axios.post(`${LLAMA_SERVER_URL}/v1/embeddings`, {
         input: text
-      }, { timeout: 10000 });
+      }, { timeout: 1000 });
       if (response.data?.data?.[0]?.embedding) {
         return response.data.data[0].embedding;
       }

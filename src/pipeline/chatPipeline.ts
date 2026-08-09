@@ -58,7 +58,9 @@ export async function processMessagePipeline(msg: MessageEvent) {
   }
 
   if (intent === 'extract_memory') {
-    await extractMemories(msg.chatId, `User: ${msg.body}`, msg.senderJid || '');
+    setTimeout(() => {
+      extractMemories(msg.chatId, `User: ${msg.body}`, msg.senderJid || '');
+    }, 100);
     // We proceed to chat to acknowledge it anyway.
   }
 
