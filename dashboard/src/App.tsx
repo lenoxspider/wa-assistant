@@ -1,7 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
-import { Send, Settings, User, CheckCircle, ListTodo, BookOpen, Plus, Lightbulb } from 'lucide-react';
+import { 
+  Send, Settings, User, ListTodo, BookOpen, 
+  Home, Activity, Search, Zap, Mic, Volume2, Cpu, 
+  Layers, MessageSquare, Sparkles, TrendingUp, ShieldAlert, BarChart3, RefreshCw
+} from 'lucide-react';
 
 const API_URL = 'http://localhost:3001/api';
 const socket = io('http://localhost:3001');
@@ -9,7 +13,7 @@ const socket = io('http://localhost:3001');
 axios.defaults.headers.common['Authorization'] = 'Bearer secret-token';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'chats'|'escalations'|'tasks'|'kb'|'insights'>('chats');
+  const [activeTab, setActiveTab] = useState<'chats'|'escalations'|'tasks'|'kb'|'insights'|'settings'>('chats');
   
   const [chats, setChats] = useState<any[]>([]);
   const [selectedChat, setSelectedChat] = useState<any>(null);
@@ -23,11 +27,20 @@ function App() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [knowledge, setKnowledge] = useState<any[]>([]);
   const [briefs, setBriefs] = useState<any[]>([]);
+  const [appSettings, setAppSettings] = useState({
+    respondInGroups: false,
+    voiceOutputEnabled: true,
+    autoReleaseTimerHours: 2,
+    webSearchEnabled: true
+  });
+
+  const [failedJobs, setFailedJobs] = useState<any[]>([]);
   
   const [newKbContent, setNewKbContent] = useState('');
   const [newKbCategory, setNewKbCategory] = useState('');
   const [aiQuery, setAiQuery] = useState('');
   const [aiAnswer, setAiAnswer] = useState('');
+  const [searchFilter, setSearchFilter] = useState('');
 
   useEffect(() => {
     fetchChats();
@@ -35,6 +48,8 @@ function App() {
     fetchTasks();
     fetchKnowledge();
     fetchBriefs();
+    fetchSettings();
+    fetchFailedJobs();
     
     socket.on('new_message', (msg) => {
       fetchChats(); 
@@ -98,7 +113,7 @@ function App() {
     } catch (e) {
       console.error(e);
     }
-  }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -107,7 +122,7 @@ function App() {
     } catch (e) {
       console.error(e);
     }
-  }
+  };
 
   const fetchKnowledge = async () => {
     try {
@@ -116,7 +131,7 @@ function App() {
     } catch (e) {
       console.error(e);
     }
-  }
+  };
 
   const fetchBriefs = async () => {
     try {
@@ -125,7 +140,25 @@ function App() {
     } catch (e) {
       console.error(e);
     }
-  }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/settings`);
+      setAppSettings(res.data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchFailedJobs = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/queue/failed`);
+      setFailedJobs(res.data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleQuery = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,7 +171,7 @@ function App() {
       console.error(e);
       setAiAnswer('Error asking AI.');
     }
-  }
+  };
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,6 +190,16 @@ function App() {
     try {
       await axios.post(`${API_URL}/rules/${selectedChat.jid}`, rules);
       setShowSettings(false);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const saveGlobalSettings = async (newSettings: any) => {
+    try {
+      const updated = { ...appSettings, ...newSettings };
+      setAppSettings(updated);
+      await axios.post(`${API_URL}/settings`, updated);
     } catch (e) {
       console.error(e);
     }
@@ -193,285 +236,560 @@ function App() {
     }
   };
 
+  const retryFailedQueue = async () => {
+    try {
+      await axios.post(`${API_URL}/queue/retry-failed`);
+      fetchFailedJobs();
+    } catch(e) {
+      console.error(e);
+    }
+  };
+
+  const filteredChats = chats.filter(c => 
+    c.name?.toLowerCase().includes(searchFilter.toLowerCase()) || 
+    c.jid.toLowerCase().includes(searchFilter.toLowerCase())
+  );
+
   return (
-    <div className="flex h-screen bg-gray-900 text-gray-100 font-sans">
-      <div className="w-[450px] border-r border-gray-800 flex flex-col bg-gray-950 shrink-0">
-        <div className="p-4 border-b border-gray-800 flex flex-col gap-3">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
-            WA Assistant
-          </h1>
-          <div className="flex flex-wrap gap-2">
-            <button 
-              onClick={() => setActiveTab('chats')}
-              className={`px-3 py-1.5 text-xs rounded-md ${activeTab === 'chats' ? 'bg-gray-800 text-white shadow' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'}`}
-            >
-              Chats
-            </button>
-            <button 
-              onClick={() => setActiveTab('tasks')}
-              className={`px-3 py-1.5 text-xs rounded-md flex items-center gap-1.5 ${activeTab === 'tasks' ? 'bg-blue-900/40 text-blue-400 shadow ring-1 ring-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'}`}
-            >
-              <ListTodo size={12} /> Tasks
-            </button>
-            <button 
-              onClick={() => setActiveTab('kb')}
-              className={`px-3 py-1.5 text-xs rounded-md flex items-center gap-1.5 ${activeTab === 'kb' ? 'bg-purple-900/40 text-purple-400 shadow ring-1 ring-purple-500/20' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'}`}
-            >
-              <BookOpen size={12} /> KB
-            </button>
-            <button 
-              onClick={() => setActiveTab('escalations')}
-              className={`px-3 py-1.5 text-xs rounded-md flex items-center gap-1.5 ${activeTab === 'escalations' ? 'bg-red-900/40 text-red-400 shadow ring-1 ring-red-500/20' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'}`}
-            >
-              Alerts
-              {escalations.length > 0 && (
-                <span className="bg-red-500 text-white text-[10px] px-1.5 rounded-full ml-1">{escalations.length}</span>
-              )}
-            </button>
-            <button 
-              onClick={() => setActiveTab('insights')}
-              className={`px-3 py-1.5 text-xs rounded-md flex items-center gap-1.5 ${activeTab === 'insights' ? 'bg-orange-900/40 text-orange-400 shadow ring-1 ring-orange-500/20' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'}`}
-            >
-              <Lightbulb size={12} /> Insights
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#0E101A] text-slate-100 p-4 md:p-6 lg:p-8 flex items-center justify-center font-sans antialiased">
+      {/* Main App Canvas Shell */}
+      <div className="w-full max-w-[1520px] h-[92vh] bg-[#161928] border border-white/10 rounded-[28px] shadow-2xl flex overflow-hidden relative backdrop-blur-2xl">
 
-        {activeTab === 'chats' && (
-          <div className="flex-1 overflow-y-auto">
-            {chats.map((c: any) => (
-              <div 
-                key={c.jid} 
-                onClick={() => setSelectedChat(c)}
-                className={`p-4 border-b border-gray-800 cursor-pointer transition-colors ${selectedChat?.jid === c.jid ? 'bg-gray-800 border-l-4 border-l-green-500' : 'hover:bg-gray-800/50'}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-500 shrink-0">
-                    <User size={20} />
-                  </div>
-                  <div className="overflow-hidden">
-                    <h3 className="font-medium text-gray-200 truncate">{c.name || c.jid.split('@')[0]}</h3>
-                    <p className="text-xs text-gray-500 truncate">{c.isGroup ? 'Group' : 'Direct Message'}</p>
-                  </div>
+        {/* 1. Left System & Nav Panel */}
+        <div className="w-[320px] bg-[#121422]/90 border-r border-white/5 flex flex-col justify-between p-5 shrink-0">
+          <div>
+            {/* Nav Header Icons */}
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <Zap size={20} className="text-white" />
+                </div>
+                <div>
+                  <h1 className="font-bold text-base tracking-wide text-white">Messiah OS</h1>
+                  <p className="text-[11px] text-blue-400 font-medium">WhatsApp AI Assistant</p>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
 
-        {activeTab === 'tasks' && (
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {tasks.length === 0 ? (
-              <p className="text-gray-500 text-center mt-10">No tasks found</p>
-            ) : tasks.map((t: any) => (
-              <div key={t.id} className={`bg-gray-800 border-l-4 p-3 rounded shadow-md ${t.status === 'completed' ? 'border-l-green-500 opacity-50' : 'border-l-blue-500'}`}>
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-blue-400 text-sm flex-1">{t.description}</h4>
-                  {t.dueBy && (
-                    <span className="text-[10px] text-gray-400 ml-2">Due: {new Date(t.dueBy).toLocaleDateString()}</span>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <span className="text-xs text-gray-500 flex-1 truncate">Source: {t.chatId.split('@')[0]}</span>
-                  {t.status !== 'completed' && (
-                    <button 
-                      onClick={() => completeTask(t.id)}
-                      className="bg-green-900/50 hover:bg-green-800/50 text-green-400 text-xs py-1 px-2 rounded transition-colors flex items-center gap-1"
-                    >
-                      <CheckCircle size={12} /> Done
-                    </button>
-                  )}
-                </div>
+              <div className="flex items-center gap-1.5 text-slate-400">
+                <button title="Dashboard Home" onClick={() => setActiveTab('chats')} className="p-1.5 rounded-lg hover:bg-white/5 hover:text-white transition-all"><Home size={16} /></button>
+                <button title="Global Settings" onClick={() => setShowSettings(!showSettings)} className="p-1.5 rounded-lg hover:bg-white/5 hover:text-white transition-all"><Settings size={16} /></button>
+                <button title="Activity Log" onClick={() => setActiveTab('insights')} className="p-1.5 rounded-lg hover:bg-white/5 hover:text-white transition-all"><Activity size={16} /></button>
               </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === 'kb' && (
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col">
-            <form onSubmit={addKnowledge} className="mb-6 space-y-3 bg-gray-900 p-4 rounded-lg border border-gray-800">
-              <h3 className="font-medium text-sm text-purple-400 flex items-center gap-1.5"><Plus size={14}/> Add Knowledge</h3>
-              <input 
-                type="text" 
-                placeholder="Category (e.g. FAQ, Pricing)" 
-                className="w-full bg-gray-950 border border-gray-700 p-2 text-sm rounded focus:border-purple-500 focus:outline-none"
-                value={newKbCategory}
-                onChange={e => setNewKbCategory(e.target.value)}
-              />
-              <textarea 
-                placeholder="Paste facts, company info, or instructions..." 
-                className="w-full bg-gray-950 border border-gray-700 p-2 text-sm rounded h-24 focus:border-purple-500 focus:outline-none"
-                value={newKbContent}
-                onChange={e => setNewKbContent(e.target.value)}
-              />
-              <button type="submit" className="w-full bg-purple-600 hover:bg-purple-500 text-white text-sm py-2 rounded transition-colors shadow-lg shadow-purple-900/20">
-                Save & Embed
-              </button>
-            </form>
-
-            <div className="space-y-3">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Stored Knowledge</h3>
-              {knowledge.map((k: any) => (
-                <div key={k.id} className="bg-gray-800 p-3 rounded shadow-sm border border-gray-700">
-                  <span className="inline-block px-2 py-0.5 bg-gray-700 text-purple-300 text-[10px] rounded mb-2">
-                    {k.category || 'general'}
-                  </span>
-                  <p className="text-sm text-gray-300 whitespace-pre-wrap">{k.content}</p>
-                </div>
-              ))}
             </div>
-          </div>
-        )}
 
-        {activeTab === 'escalations' && (
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {escalations.length === 0 ? (
-              <p className="text-gray-500 text-center mt-10">No active escalations</p>
-            ) : escalations.map((esc: any, idx: number) => (
-              <div key={idx} className="bg-gray-800 border-l-4 border-l-red-500 p-3 rounded shadow-md">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-red-400 text-sm">{esc.chatId.split('@')[0]}</h4>
-                  <span className="text-[10px] text-gray-500">
-                    {new Date(esc.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-300 mb-3">{esc.reason}</p>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => {
-                      setSelectedChat({ jid: esc.chatId, name: esc.chatId });
-                      setActiveTab('chats');
-                    }}
-                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-xs py-1.5 rounded transition-colors"
-                  >
-                    View Chat
-                  </button>
-                  <button 
-                    onClick={() => resolveEscalation(esc.id)}
-                    className="flex-1 bg-green-900/50 hover:bg-green-800/50 text-green-400 text-xs py-1.5 rounded transition-colors flex items-center justify-center gap-1"
-                  >
-                    <CheckCircle size={14} /> Resolve
-                  </button>
-                </div>
+            {/* Performance Spline Speed Curve Panel */}
+            <div className="bg-[#1A1D30] border border-white/5 rounded-2xl p-4 mb-5 shadow-lg relative overflow-hidden group">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+                  <TrendingUp size={14} className="text-blue-400" /> Pipeline Throughput
+                </span>
+                <span className="text-sm font-bold text-white bg-blue-500/20 px-2 py-0.5 rounded-lg border border-blue-500/30">
+                  2.54x
+                </span>
               </div>
-            ))}
-          </div>
-        )}
 
-        {activeTab === 'insights' && (
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
-            <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
-              <h3 className="text-orange-400 font-semibold text-sm mb-3">Ask AI (Archive Query)</h3>
-              <form onSubmit={handleQuery} className="flex gap-2 mb-3">
-                <input 
-                  type="text" 
-                  value={aiQuery}
-                  onChange={e => setAiQuery(e.target.value)}
-                  placeholder="e.g. What did John say about the project?" 
-                  className="flex-1 bg-gray-950 border border-gray-700 p-2 text-sm rounded focus:border-orange-500 focus:outline-none"
-                />
-                <button type="submit" className="bg-orange-600 hover:bg-orange-500 text-white px-3 py-2 rounded transition-colors">
-                  Ask
-                </button>
-              </form>
-              {aiAnswer && (
-                <div className="bg-gray-800 p-3 rounded text-sm text-gray-200 border border-gray-700 whitespace-pre-wrap">
-                  {aiAnswer}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Recent Briefs</h3>
-              {briefs.map((b: any) => (
-                <div key={b.id} className="bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-700">
-                  <span className="text-xs text-orange-300 font-medium mb-2 block">{b.date}</span>
-                  <div className="text-sm text-gray-300 whitespace-pre-wrap">{b.contentJson}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="flex-1 flex flex-col relative bg-gray-900">
-        {selectedChat ? (
-          <>
-            <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-950/80 backdrop-blur-md shadow-sm z-10">
-              <h2 className="font-semibold text-lg">{selectedChat.name || selectedChat.jid}</h2>
-              <button 
-                onClick={() => setShowSettings(!showSettings)}
-                className="p-2 rounded-full hover:bg-gray-800 text-gray-400 transition-colors"
-              >
-                <Settings size={20} />
-              </button>
-            </div>
-            
-            {showSettings && (
-              <div className="absolute top-16 right-4 w-80 bg-gray-800 p-5 rounded-xl shadow-2xl z-20 border border-gray-700 backdrop-blur-xl bg-opacity-95">
-                <h3 className="font-semibold mb-4 text-gray-100 border-b border-gray-700 pb-2">Chat Settings</h3>
-                <label className="flex items-center justify-between gap-3 mb-6 cursor-pointer">
-                  <span className="text-sm text-gray-300">AI Auto-Reply</span>
-                  <input 
-                    type="checkbox" 
-                    checked={rules.autoReplyEnabled === 1}
-                    onChange={(e) => setRules({...rules, autoReplyEnabled: e.target.checked ? 1 : 0})}
-                    className="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded focus:ring-green-500"
+              {/* Spline curve visual graph */}
+              <div className="h-24 w-full relative flex items-end">
+                <svg className="w-full h-full overflow-visible" viewBox="0 0 200 80">
+                  <defs>
+                    <linearGradient id="curveGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path 
+                    d="M 0,65 Q 40,60 80,45 T 160,20 T 200,10" 
+                    fill="none" 
+                    stroke="#3B82F6" 
+                    strokeWidth="3.5" 
+                    strokeLinecap="round"
                   />
-                </label>
-                <button 
-                  onClick={saveRules}
-                  className="w-full bg-green-600 hover:bg-green-500 text-white p-2 rounded-lg transition-colors shadow-lg shadow-green-900/50 font-medium"
-                >
-                  Save Settings
+                  <path 
+                    d="M 0,65 Q 40,60 80,45 T 160,20 T 200,10 L 200,80 L 0,80 Z" 
+                    fill="url(#curveGradient)" 
+                  />
+                  <circle cx="200" cy="10" r="4" fill="#60A5FA" className="animate-ping" />
+                  <circle cx="200" cy="10" r="4" fill="#3B82F6" />
+                </svg>
+              </div>
+
+              {/* Speed Multiplier Pills */}
+              <div className="grid grid-cols-4 gap-1.5 mt-3">
+                {['1.45x', '3.42x', '5.22x', '1.20x'].map((m, idx) => (
+                  <span key={idx} className="text-[11px] font-semibold text-slate-300 bg-[#222741] border border-white/5 rounded-lg py-1 text-center hover:border-blue-500/40 hover:text-white transition-all cursor-pointer">
+                    {m}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Active Multimodal Engine Highlight Card */}
+            <div className="bg-[#1A1D30] border border-white/5 rounded-2xl p-4 shadow-lg mb-5 relative">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 p-0.5 shadow-md">
+                  <div className="w-full h-full bg-[#121422] rounded-[10px] flex items-center justify-center">
+                    <Cpu size={20} className="text-purple-400" />
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-xs font-semibold text-slate-200">Qwen2.5 Omni & Messiah</h4>
+                  <p className="text-[10px] text-slate-400">Eyes, Ears & Reasoning</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] pt-3 border-t border-white/5">
+                <span className="text-slate-400">Uptime: <strong className="text-slate-200 font-semibold">23h : 43m</strong></span>
+                <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 flex items-center gap-1 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> 128 Active
+                </span>
+              </div>
+            </div>
+
+            {/* Failed Queue Items Banner (if any) */}
+            {failedJobs.length > 0 && (
+              <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 mb-3 flex items-center justify-between">
+                <span className="text-xs text-rose-300 font-semibold">{failedJobs.length} Failed Queue Jobs</span>
+                <button onClick={retryFailedQueue} className="bg-rose-600 hover:bg-rose-500 text-white text-[10px] px-2 py-1 rounded-lg flex items-center gap-1">
+                  <RefreshCw size={12} /> Retry
                 </button>
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900 bg-opacity-50">
-              {messages.map((m: any, i) => (
-                <div key={i} className={`flex ${m.fromMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[75%] p-3 shadow-sm ${
-                    m.fromMe 
-                    ? 'bg-gradient-to-br from-green-600 to-emerald-700 text-white rounded-2xl rounded-br-sm' 
-                    : 'bg-gray-800 text-gray-100 border border-gray-700 rounded-2xl rounded-bl-sm'
-                  }`}>
-                    <p className={`text-[15px] leading-relaxed whitespace-pre-wrap ${m.deleted ? 'italic opacity-70 text-gray-400' : ''}`}>
-                      {m.deleted === 1 ? '🕒 [Message Expired]' : m.body}
-                    </p>
-                    <span className="text-[10px] opacity-50 mt-1 block text-right font-medium tracking-wide">
-                      {new Date(m.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+            {/* Quick Memory Items List */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-xs font-semibold text-slate-400 px-1 mb-1">
+                <span>Vector Memory Index</span>
+                <span onClick={() => setActiveTab('kb')} className="text-blue-400 cursor-pointer hover:underline text-[11px]">View KB</span>
+              </div>
+              <div className="bg-[#1A1D30] border border-white/5 rounded-xl p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                  <span className="text-xs font-medium text-slate-200 truncate max-w-[170px]">ChromaDB Vectors</span>
+                </div>
+                <span className="text-[11px] font-bold text-amber-400">0.0 $</span>
+              </div>
+              <div className="bg-[#1A1D30] border border-white/5 rounded-xl p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                  <span className="text-xs font-medium text-slate-200 truncate max-w-[170px]">SQLite Local DB</span>
+                </div>
+                <span className="text-[11px] font-bold text-blue-400">100%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick System Stats Footer */}
+          <div className="pt-4 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
+            <span className="flex items-center gap-1.5"><ShieldAlert size={14} className="text-emerald-400"/> System Guard</span>
+            <span className="text-slate-300 font-mono text-[11px]">v1.2.0</span>
+          </div>
+        </div>
+
+        {/* 2. Center Command Hub & Stats Area */}
+        <div className="flex-1 bg-[#161928] flex flex-col p-6 overflow-y-auto relative">
+          
+          {/* Global Settings Modal Overlay */}
+          {showSettings && (
+            <div className="absolute top-16 right-6 w-96 bg-[#1F243B] border border-white/10 p-5 rounded-2xl shadow-2xl z-30 backdrop-blur-xl">
+              <div className="flex justify-between items-center pb-3 mb-4 border-b border-white/10">
+                <h3 className="font-bold text-sm text-white flex items-center gap-2"><Settings size={16}/> Global Bot Control Switches</h3>
+                <button onClick={() => setShowSettings(false)} className="text-slate-400 hover:text-white text-xs">Close</button>
+              </div>
+              <div className="space-y-4 text-xs">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <span className="text-slate-300 font-medium">Respond in Group Chats</span>
+                  <input 
+                    type="checkbox" 
+                    checked={appSettings.respondInGroups} 
+                    onChange={e => saveGlobalSettings({ respondInGroups: e.target.checked })}
+                    className="w-4 h-4 accent-blue-500" 
+                  />
+                </label>
+                <label className="flex items-center justify-between cursor-pointer">
+                  <span className="text-slate-300 font-medium">Voice Audio Synthesis (Qwen TTS)</span>
+                  <input 
+                    type="checkbox" 
+                    checked={appSettings.voiceOutputEnabled} 
+                    onChange={e => saveGlobalSettings({ voiceOutputEnabled: e.target.checked })}
+                    className="w-4 h-4 accent-blue-500" 
+                  />
+                </label>
+                <label className="flex items-center justify-between cursor-pointer">
+                  <span className="text-slate-300 font-medium">Live DuckDuckGo Web Search</span>
+                  <input 
+                    type="checkbox" 
+                    checked={appSettings.webSearchEnabled} 
+                    onChange={e => saveGlobalSettings({ webSearchEnabled: e.target.checked })}
+                    className="w-4 h-4 accent-blue-500" 
+                  />
+                </label>
+                {selectedChat && (
+                  <div className="pt-3 border-t border-white/10">
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="text-slate-300 font-medium">Current Chat Auto-Reply</span>
+                      <input 
+                        type="checkbox" 
+                        checked={rules.autoReplyEnabled === 1} 
+                        onChange={e => setRules({ ...rules, autoReplyEnabled: e.target.checked ? 1 : 0 })}
+                        className="w-4 h-4 accent-emerald-500" 
+                      />
+                    </label>
+                    <button onClick={saveRules} className="w-full mt-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 rounded-xl transition-all">
+                      Save Chat Setting
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Top Bar Header */}
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setShowSettings(!showSettings)} className="bg-[#222741] hover:bg-[#2A3050] text-slate-200 px-4 py-2 rounded-xl text-xs font-semibold border border-white/5 transition-all shadow-sm flex items-center gap-1.5">
+                <Settings size={14} /> Control Switches
+              </button>
+              <div className="flex items-center gap-2 bg-[#1A1D30] px-4 py-2 rounded-xl border border-white/5 text-xs">
+                <Sparkles size={14} className="text-amber-400" />
+                <span className="text-slate-400">Balance:</span>
+                <strong className="text-white font-bold text-sm">68,150.50 $</strong>
+              </div>
+            </div>
+
+            {/* Profile Avatar & Global Status */}
+            <div className="flex items-center gap-3">
+              <div className="text-right hidden sm:block">
+                <h3 className="text-xs font-bold text-white">Messiah Admin</h3>
+                <span className="text-[10px] text-emerald-400 flex items-center justify-end gap-1 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Online
+                </span>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 p-0.5 shadow-md">
+                <div className="w-full h-full bg-[#121422] rounded-[10px] flex items-center justify-center text-white font-bold text-sm">
+                  MA
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Featured Engine Hero Banner Card */}
+          <div className="bg-[#1A1D30] border border-white/5 rounded-2xl p-6 mb-6 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+            <div className="space-y-2 max-w-md">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">
+                Primary Architecture
+              </span>
+              <h2 className="text-2xl font-bold text-white">Multimodal & Text Engine</h2>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Messiah 7B handles deep conversation reasoning, while Qwen2.5 Omni delivers eyes (vision analysis) and ears (speech audio synthesis).
+              </p>
+              <div className="flex items-center gap-3 pt-2">
+                <span className="text-xs font-semibold text-slate-300">7.19 $ » 8.15 $</span>
+                <button className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-lg shadow-blue-600/30 transition-all">
+                  Receive 2.54x
+                </button>
+              </div>
+            </div>
+
+            <div className="w-36 h-36 bg-gradient-to-tr from-blue-600/20 via-purple-600/20 to-pink-600/20 rounded-2xl border border-white/10 flex items-center justify-center relative p-4 shadow-inner">
+              <Cpu size={56} className="text-blue-400 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+              <span className="absolute -bottom-2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
+                1.7s Latency
+              </span>
+            </div>
+          </div>
+
+          {/* 3 Vibrant 3D Feature Promo Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* Sky Blue Card */}
+            <div 
+              onClick={() => setActiveTab('kb')}
+              className="bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 rounded-2xl p-5 text-white shadow-xl glow-blue cursor-pointer hover:scale-[1.02] transition-all relative overflow-hidden group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 shadow-inner">
+                <BookOpen size={24} className="text-white" />
+              </div>
+              <h3 className="font-bold text-base mb-1">Knowledge & Memory</h3>
+              <p className="text-xs text-blue-100/90 leading-relaxed mb-4">
+                Don't miss the latest facts & vector memories saved in ChromaDB.
+              </p>
+              <span className="text-[11px] font-bold underline text-white/90 group-hover:text-white">Explore KB →</span>
+            </div>
+
+            {/* Electric Violet Card */}
+            <div 
+              onClick={() => setActiveTab('tasks')}
+              className="bg-gradient-to-br from-purple-600 via-indigo-600 to-violet-700 rounded-2xl p-5 text-white shadow-xl glow-purple cursor-pointer hover:scale-[1.02] transition-all relative overflow-hidden group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 shadow-inner">
+                <ListTodo size={24} className="text-white" />
+              </div>
+              <h3 className="font-bold text-base mb-1">Task Extraction</h3>
+              <p className="text-xs text-purple-100/90 leading-relaxed mb-4">
+                Auto-extract commitments & sync with Todoist, Notion or Webhooks.
+              </p>
+              <span className="text-[11px] font-bold underline text-white/90 group-hover:text-white">View Tasks →</span>
+            </div>
+
+            {/* Coral Rose Card */}
+            <div 
+              onClick={() => setActiveTab('escalations')}
+              className="bg-gradient-to-br from-rose-500 via-red-500 to-pink-600 rounded-2xl p-5 text-white shadow-xl glow-rose cursor-pointer hover:scale-[1.02] transition-all relative overflow-hidden group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 shadow-inner">
+                <ShieldAlert size={24} className="text-white" />
+              </div>
+              <h3 className="font-bold text-base mb-1">Intervention Alerts</h3>
+              <p className="text-xs text-rose-100/90 leading-relaxed mb-4">
+                Inspect human escalations & manage 2-hour auto-release timer.
+              </p>
+              <span className="text-[11px] font-bold underline text-white/90 group-hover:text-white">
+                Open Alerts ({escalations.length}) →
+              </span>
+            </div>
+          </div>
+
+          {/* System Statistics & Contacts Table Panel */}
+          <div className="bg-[#1A1D30] border border-white/5 rounded-2xl p-5 shadow-xl flex-1 flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <BarChart3 size={16} className="text-blue-400" /> Active WhatsApp Conversations & Statistics
+              </h3>
+              <div className="flex items-center gap-3 text-xs text-slate-400">
+                <span className="flex items-center gap-1 font-semibold text-slate-200"><User size={14}/> 73 Contacts</span>
+                <span className="flex items-center gap-1 font-semibold text-slate-200"><Layers size={14}/> 24.60 MB</span>
+              </div>
+            </div>
+
+            {/* Active Table List */}
+            <div className="space-y-2.5 overflow-y-auto flex-1 pr-1">
+              {chats.slice(0, 5).map((c: any, i: number) => (
+                <div key={c.jid || i} className="bg-[#222741] border border-white/5 rounded-xl p-3.5 flex items-center justify-between hover:border-blue-500/40 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                      {(c.name || c.jid)[0]?.toUpperCase()}
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">{c.name || c.jid.split('@')[0]}</h4>
+                      <p className="text-[10px] text-slate-400">{c.isGroup ? 'Group Conversation' : 'Direct Message'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <span className="text-xs font-semibold text-slate-300 hidden sm:inline">20.47 $</span>
+                    <button 
+                      onClick={() => {
+                        setSelectedChat(c);
+                        setActiveTab('chats');
+                      }}
+                      className="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs px-3 py-1.5 rounded-lg transition-all font-semibold"
+                    >
+                      Involved
+                    </button>
                   </div>
                 </div>
               ))}
-              <div ref={messagesEndRef} />
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Right Sidebar / WhatsApp Live Feed & Chat Drawer */}
+        <div className="w-[380px] bg-[#121422] border-l border-white/5 flex flex-col justify-between p-5 shrink-0 relative">
+          
+          {/* Sidebar Top Search & Active Counters */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                <MessageSquare size={16} className="text-blue-400" /> WhatsApp Feed
+              </h3>
+              <span className="text-[11px] font-bold text-slate-400 bg-[#1A1D30] px-2 py-0.5 rounded-full border border-white/5">
+                438 Online
+              </span>
             </div>
 
-            <form onSubmit={handleSend} className="p-4 border-t border-gray-800 bg-gray-950 flex gap-3">
+            {/* Search Filter Input */}
+            <div className="relative mb-4">
+              <Search size={14} className="absolute left-3 top-3 text-slate-400" />
               <input 
                 type="text" 
+                placeholder="Search chats or messages..." 
+                value={searchFilter}
+                onChange={e => setSearchFilter(e.target.value)}
+                className="w-full bg-[#1A1D30] border border-white/5 text-xs text-white pl-9 pr-3 py-2.5 rounded-xl focus:outline-none focus:border-blue-500/50 transition-all placeholder-slate-500"
+              />
+            </div>
+
+            {/* Nav Tabs Bar */}
+            <div className="grid grid-cols-5 gap-1 mb-4 bg-[#1A1D30] p-1 rounded-xl border border-white/5 text-[11px]">
+              <button onClick={() => setActiveTab('chats')} className={`py-1.5 rounded-lg font-medium transition-all ${activeTab === 'chats' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>Chats</button>
+              <button onClick={() => setActiveTab('tasks')} className={`py-1.5 rounded-lg font-medium transition-all ${activeTab === 'tasks' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>Tasks</button>
+              <button onClick={() => setActiveTab('kb')} className={`py-1.5 rounded-lg font-medium transition-all ${activeTab === 'kb' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>KB</button>
+              <button onClick={() => setActiveTab('escalations')} className={`py-1.5 rounded-lg font-medium transition-all ${activeTab === 'escalations' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>Alerts</button>
+              <button onClick={() => setActiveTab('insights')} className={`py-1.5 rounded-lg font-medium transition-all ${activeTab === 'insights' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>AI</button>
+            </div>
+          </div>
+
+          {/* Floating System Overlay Message Banner (Matches Mockup) */}
+          <div className="absolute top-28 right-4 left-4 z-20 bg-[#1F243B] border border-blue-500/30 rounded-2xl p-4 shadow-2xl backdrop-blur-xl flex items-start gap-3 transform hover:scale-[1.02] transition-all">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+              <Activity size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-center">
+                <h4 className="text-xs font-bold text-white">System Message</h4>
+                <span className="text-[10px] text-slate-400">10:32</span>
+              </div>
+              <p className="text-[11px] text-slate-300 truncate mt-0.5">Your surfing... WhatsApp pipeline running smoothly.</p>
+            </div>
+          </div>
+
+          {/* Active Tab Panel Views */}
+          <div className="flex-1 overflow-y-auto space-y-2 mt-20 pr-1">
+            
+            {/* CHATS TAB */}
+            {activeTab === 'chats' && (
+              filteredChats.map((c: any) => (
+                <div 
+                  key={c.jid} 
+                  onClick={() => setSelectedChat(c)}
+                  className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                    selectedChat?.jid === c.jid 
+                    ? 'bg-[#222741] border-blue-500/50 shadow-lg' 
+                    : 'bg-[#1A1D30]/60 border-white/5 hover:bg-[#1A1D30]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                      {(c.name || c.jid)[0]?.toUpperCase()}
+                    </div>
+                    <div className="overflow-hidden">
+                      <h4 className="text-xs font-bold text-white truncate">{c.name || c.jid.split('@')[0]}</h4>
+                      <p className="text-[10px] text-slate-400 truncate">{c.isGroup ? 'Group Chat' : 'Direct Message'}</p>
+                    </div>
+                  </div>
+
+                  <span className="text-[10px] text-slate-500 font-medium">12:35</span>
+                </div>
+              ))
+            )}
+
+            {/* TASKS TAB */}
+            {activeTab === 'tasks' && (
+              tasks.map((t: any) => (
+                <div key={t.id} className="bg-[#1A1D30] border border-white/5 p-3 rounded-2xl shadow-sm">
+                  <div className="flex justify-between items-start mb-1">
+                    <h4 className="text-xs font-bold text-blue-400">{t.description}</h4>
+                    {t.status !== 'completed' && (
+                      <button onClick={() => completeTask(t.id)} className="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded-lg border border-emerald-500/30">
+                        Done
+                      </button>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-slate-500">Source: {t.chatId.split('@')[0]}</span>
+                </div>
+              ))
+            )}
+
+            {/* KB TAB */}
+            {activeTab === 'kb' && (
+              <div className="space-y-3">
+                <form onSubmit={addKnowledge} className="bg-[#1A1D30] p-3 rounded-2xl border border-white/5 space-y-2">
+                  <input 
+                    type="text" 
+                    placeholder="Category (e.g. FAQ)" 
+                    value={newKbCategory}
+                    onChange={e => setNewKbCategory(e.target.value)}
+                    className="w-full bg-[#121422] border border-white/5 p-2 text-xs rounded-xl text-white focus:outline-none"
+                  />
+                  <textarea 
+                    placeholder="Paste fact or context..." 
+                    value={newKbContent}
+                    onChange={e => setNewKbContent(e.target.value)}
+                    className="w-full bg-[#121422] border border-white/5 p-2 text-xs rounded-xl text-white h-16 focus:outline-none"
+                  />
+                  <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 rounded-xl">
+                    Save Knowledge
+                  </button>
+                </form>
+                {knowledge.map((k: any) => (
+                  <div key={k.id} className="bg-[#1A1D30] p-3 rounded-xl border border-white/5">
+                    <span className="text-[9px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md uppercase">
+                      {k.category || 'general'}
+                    </span>
+                    <p className="text-xs text-slate-300 mt-1">{k.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ESCALATIONS ALERTS TAB */}
+            {activeTab === 'escalations' && (
+              escalations.map((esc: any, idx: number) => (
+                <div key={idx} className="bg-[#1A1D30] border-l-4 border-l-rose-500 p-3 rounded-2xl">
+                  <h4 className="text-xs font-bold text-rose-400">{esc.chatId.split('@')[0]}</h4>
+                  <p className="text-xs text-slate-300 my-1">{esc.reason}</p>
+                  <button onClick={() => resolveEscalation(esc.id)} className="w-full bg-emerald-500/20 text-emerald-400 text-xs py-1 rounded-xl border border-emerald-500/30">
+                    Resolve Ticket
+                  </button>
+                </div>
+              ))
+            )}
+
+            {/* AI QUERY TAB */}
+            {activeTab === 'insights' && (
+              <div className="space-y-3">
+                <form onSubmit={handleQuery} className="bg-[#1A1D30] p-3 rounded-2xl border border-white/5 space-y-2">
+                  <input 
+                    type="text" 
+                    placeholder="Ask AI about chat archive..." 
+                    value={aiQuery}
+                    onChange={e => setAiQuery(e.target.value)}
+                    className="w-full bg-[#121422] border border-white/5 p-2 text-xs rounded-xl text-white focus:outline-none"
+                  />
+                  <button type="submit" className="w-full bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold py-2 rounded-xl">
+                    Query Archive
+                  </button>
+                </form>
+                {aiAnswer && (
+                  <div className="bg-[#1A1D30] p-3 rounded-xl text-xs text-slate-200 border border-white/5 whitespace-pre-wrap">
+                    {aiAnswer}
+                  </div>
+                )}
+                {briefs.map((b: any) => (
+                  <div key={b.id} className="bg-[#1A1D30] p-3 rounded-xl border border-white/5">
+                    <span className="text-[10px] font-bold text-amber-400 block mb-1">{b.date}</span>
+                    <p className="text-xs text-slate-300 whitespace-pre-wrap">{b.contentJson}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+          </div>
+
+          {/* Quick Message Input Bar (Matches Mockup Footer) */}
+          <div className="pt-3 border-t border-white/5">
+            <form onSubmit={handleSend} className="bg-[#1A1D30] p-2 rounded-2xl border border-white/5 flex items-center gap-2">
+              <button type="button" className="p-2 text-slate-400 hover:text-white"><Volume2 size={16} /></button>
+              <button type="button" className="p-2 text-slate-400 hover:text-white"><Mic size={16} /></button>
+              
+              <input 
+                type="text" 
+                placeholder="Write your message..." 
                 value={replyText}
                 onChange={e => setReplyText(e.target.value)}
-                placeholder="Type a manual reply..."
-                className="flex-1 bg-gray-900 border border-gray-700 text-gray-100 px-4 py-3 rounded-xl focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all placeholder-gray-500"
+                className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none"
               />
+
               <button 
-                type="submit"
-                className="bg-green-600 hover:bg-green-500 text-white px-5 rounded-xl flex items-center justify-center transition-colors shadow-lg shadow-green-900/50"
+                type="submit" 
+                className="w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-600/30 transition-all shrink-0"
               >
-                <Send size={20} />
+                <Send size={16} />
               </button>
             </form>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-600 flex-col gap-5 bg-gradient-to-br from-gray-900 to-gray-950">
-            <div className="w-24 h-24 rounded-full bg-gray-800/50 flex items-center justify-center shadow-inner">
-              <User size={40} className="text-gray-700" />
-            </div>
-            <p className="text-lg font-medium text-gray-500">Select a chat to start messaging</p>
           </div>
-        )}
+
+        </div>
+
       </div>
     </div>
   );
